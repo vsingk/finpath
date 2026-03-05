@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="dashboard-header">
+        <h2>Welcome back, {{ user.first_name|default:user.username }}!</h2>
+        <p>Here's your progress overview.</p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">&#128293;</div>
+            <div class="stat-value">{{ streak }}</div>
+            <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#9989;</div>
+            <div class="stat-value">{{ completion_percent }}%</div>
+            <div class="stat-label">Profile Complete</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#127942;</div>
+            <div class="stat-value">{{ achieved_count }} / {{ milestones|length }}</div>
+            <div class="stat-label">Milestones</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Profile Completion</h3>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ completion_percent }}%"></div>
+        </div>
+        <p class="progress-text">
+            {{ completion_percent }}% complete
+            {% if completion_percent < 100 %}
+            &mdash; <a href="{% url 'profile' %}">Complete your profile</a>
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Milestones</h3>
+        <div class="milestone-grid">
+            {% for milestone in milestones %}
+            <div class="milestone-card {% if milestone.achieved %}milestone-achieved{% else %}milestone-locked{% endif %}">
+                <div class="milestone-icon">{{ milestone.icon }}</div>
+                <div class="milestone-name">{{ milestone.name }}</div>
+                <div class="milestone-desc">{{ milestone.description }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Your Tools</h3>
+        <div class="card-grid">
+            {% for feature in placeholder_features %}
+            {% if feature.url %}
+            <a href="{% url feature.url %}" class="card card-link">
+                <div class="card-icon">{{ feature.icon }}</div>
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+                <span class="badge badge-active">{{ feature.status }}</span>
+            </a>
+            {% else %}
+            <div class="card">
+                <div class="card-icon">{{ feature.icon }}</div>
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+                <span class="badge badge-muted">{{ feature.status }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

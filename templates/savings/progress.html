@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}Savings Progress - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="savings-header">
+        <h2>Savings Progress</h2>
+        <p>Track your savings and see how they grow over time.</p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-value">${{ total_saved|floatformat:2 }}</div>
+            <div class="stat-label">Total Saved</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128197;</div>
+            <div class="stat-value">{{ entries_this_month }}</div>
+            <div class="stat-label">Entries This Month</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128200;</div>
+            <div class="stat-value">${{ avg_monthly|floatformat:2 }}</div>
+            <div class="stat-label">Avg Monthly Savings</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="form-card savings-form-card">
+            <h3>Log a Savings Entry</h3>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="savings-form-row">
+                    {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                        <small class="form-error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Add Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Cumulative Savings Over Time</h3>
+        <div class="chart-card">
+            <canvas id="historicalChart"></canvas>
+            {% if not recent_entries %}
+            <p class="chart-empty">Add your first savings entry to see your progress chart.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Savings Projections</h3>
+        <div class="chart-card">
+            <div class="projection-controls">
+                <button class="btn btn-sm btn-outline projection-btn active" data-years="1">1 Year</button>
+                <button class="btn btn-sm btn-outline projection-btn" data-years="3">3 Years</button>
+                <button class="btn btn-sm btn-outline projection-btn" data-years="5">5 Years</button>
+            </div>
+            <canvas id="projectionChart"></canvas>
+            {% if not recent_entries %}
+            <p class="chart-empty">Add savings entries to generate projections.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Recent Entries</h3>
+        {% if recent_entries %}
+        <div class="entries-table-wrapper">
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Note</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in recent_entries %}
+                    <tr>
+                        <td>{{ entry.date|date:"M d, Y" }}</td>
+                        <td class="entry-amount">${{ entry.amount|floatformat:2 }}</td>
+                        <td class="entry-note">{{ entry.note|default:"--" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'savings_delete' entry.pk %}" class="delete-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-delete" title="Delete entry" onclick="return confirm('Delete this entry?')">
+                                    &times;
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card" style="text-align:center; padding: 40px;">
+            <p>No savings entries yet. Use the form above to log your first one!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+    const historicalLabels = {{ historical_labels_json|safe }};
+    const historicalData = {{ historical_data_json|safe }};
+    const projection = {{ projection_json|safe }};
+
+    if (historicalLabels.length > 0) {
+        const ctxHist = document.getElementById('historicalChart').getContext('2d');
+        new Chart(ctxHist, {
+            type: 'line',
+            data: {
+                labels: historicalLabels,
+                datasets: [{
+                    label: 'Cumulative Savings ($)',
+                    data: historicalData,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#16a34a',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return '$' + ctx.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: function(val) { return '$' + val.toLocaleString(); } }
+                    }
+                }
+            }
+        });
+    }
+
+    let projChart = null;
+
+    function renderProjection(years) {
+        const ctx = document.getElementById('projectionChart').getContext('2d');
+        const key = years + 'yr';
+        const dataPoints = projection[key] || [];
+        const labels = projection.labels.slice(0, dataPoints.length);
+
+        if (projChart) projChart.destroy();
+
+        projChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Projected Savings ($)',
+                    data: dataPoints,
+                    borderColor: '#15803d',
+                    backgroundColor: 'rgba(21, 128, 61, 0.08)',
+                    fill: true,
+                    tension: 0.3,
+                    borderDash: [6, 3],
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return '$' + ctx.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 12 } },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: function(val) { return '$' + val.toLocaleString(); } }
+                    }
+                }
+            }
+        });
+    }
+
+    document.querySelectorAll('.projection-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.projection-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            this.classList.add('active');
+            renderProjection(this.dataset.years);
+        });
+    });
+
+    if (projection.labels && projection.labels.length > 0) {
+        renderProjection(1);
+    }
+</script>
+{% endblock %}

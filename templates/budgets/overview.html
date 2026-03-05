@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}Budget Tracking - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="budget-header">
+        <h2>Budget Tracking</h2>
+        <p>{{ current_month|date:"F Y" }} — manage your spending and stay on track.</p>
+    </div>
+
+    {% if not has_budget %}
+    <div class="dashboard-section">
+        <div class="card" style="text-align:center; padding: 48px;">
+            <div class="card-icon">&#128202;</div>
+            <h3>No budget set for {{ current_month|date:"F Y" }}</h3>
+            <p style="color: var(--text-light); margin-bottom: 20px;">Create a monthly budget to start tracking your spending.</p>
+            <a href="{% url 'budget_setup' %}" class="btn btn-primary">Set Up Budget</a>
+        </div>
+    </div>
+    {% else %}
+
+    <div class="dashboard-stats budget-stats">
+        <div class="stat-card">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-value">${{ total_income|floatformat:2 }}</div>
+            <div class="stat-label">Monthly Income</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128203;</div>
+            <div class="stat-value">${{ total_allocated|floatformat:2 }}</div>
+            <div class="stat-label">Total Allocated</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128184;</div>
+            <div class="stat-value">${{ total_spent|floatformat:2 }}</div>
+            <div class="stat-label">Total Spent</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#9989;</div>
+            <div class="stat-value {% if remaining < 0 %}stat-value-danger{% endif %}">${{ remaining|floatformat:2 }}</div>
+            <div class="stat-label">Remaining</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section budget-actions">
+        <a href="{% url 'budget_setup' %}" class="btn btn-outline btn-sm">Edit Budget</a>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Spending by Category</h3>
+        {% for cat in category_data %}
+        <div class="budget-category-row">
+            <div class="budget-category-header">
+                <span class="budget-category-name">{{ cat.name }}</span>
+                <span class="budget-category-amounts">
+                    ${{ cat.spent|floatformat:2 }} / ${{ cat.allocated|floatformat:2 }}
+                    {% if cat.over_budget %}
+                    <span class="budget-over-badge">Over</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar {% if cat.over_budget %}progress-bar-danger{% endif %}" style="width: {{ cat.percent }}%"></div>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--text-light);">No categories with allocations yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Money Flow</h3>
+        <div class="chart-card budget-sankey-card">
+            <div id="sankey_chart"></div>
+            {% if not category_data %}
+            <p class="chart-empty">Add budget categories and expenses to see your money flow.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="form-card budget-form-card">
+            <h3>Log an Expense</h3>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="budget-form-row">
+                    {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                        <small class="form-error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Add Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Recent Expenses</h3>
+        {% if recent_expenses %}
+        <div class="entries-table-wrapper">
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in recent_expenses %}
+                    <tr>
+                        <td>{{ expense.date|date:"M d, Y" }}</td>
+                        <td>{{ expense.category.name }}</td>
+                        <td class="entry-amount">${{ expense.amount|floatformat:2 }}</td>
+                        <td class="entry-note">{{ expense.description|default:"--" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'budget_delete_expense' expense.pk %}" class="delete-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-delete" title="Delete expense" onclick="return confirm('Delete this expense?')">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card" style="text-align:center; padding: 40px;">
+            <p>No expenses logged yet. Use the form above to add your first one!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if has_budget %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script type="text/javascript">
+    google.charts.load('current', {'packages':['sankey']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+        var rawData = {{ sankey_json|safe }};
+        if (!rawData || rawData.length === 0) return;
+
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'From');
+        data.addColumn('string', 'To');
+        data.addColumn('number', 'Amount');
+        data.addRows(rawData);
+
+        var options = {
+            width: '100%',
+            height: 400,
+            sankey: {
+                node: {
+                    colors: ['#16a34a', '#15803d', '#22c55e', '#4ade80', '#86efac', '#bbf7d0', '#dc2626', '#64748b'],
+                    label: { fontSize: 14, color: '#1e293b', bold: true },
+                    nodePadding: 20,
+                },
+                link: {
+                    colorMode: 'gradient',
+                },
+            },
+        };
+
+        var chart = new google.visualization.Sankey(document.getElementById('sankey_chart'));
+        chart.draw(data, options);
+    }
+
+    window.addEventListener('resize', function() { drawChart(); });
+</script>
+{% endif %}
+{% endblock %}

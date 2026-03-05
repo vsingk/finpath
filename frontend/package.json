@@ -1,0 +1,12 @@
+{
+  "name": "finpath-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React frontend for FinPath (future interactive widgets)",
+  "scripts": {
+    "build": "echo 'No build configured yet'",
+    "dev": "echo 'No dev server configured yet'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
