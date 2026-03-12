@@ -272,8 +272,6 @@ a:hover {
 }
 
 .form-group {
-    background-color: none;
-    
     margin-bottom: 20px;
 }
 
@@ -560,7 +558,6 @@ select.form-input {
     grid-template-columns: 1fr 1fr 2fr;
     gap: 16px;
     align-items: start;
-    
 }
 
 /* ===== Chart Cards ===== */
@@ -641,6 +638,10 @@ select.form-input {
 }
 
 .entry-note {
+    color: var(--text-light);
+}
+
+.unallocated-amount {
     color: var(--text-light);
 }
 
@@ -872,6 +873,122 @@ select.form-input {
     }
 }
 
+/* ===== Savings Goals ===== */
+.goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.goal-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: all var(--transition);
+    box-shadow: var(--shadow-sm);
+}
+
+.goal-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--primary);
+}
+
+.goal-header {
+    margin-bottom: 16px;
+}
+
+.goal-header h4 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.goal-type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    margin-bottom: 8px;
+}
+
+.goal-progress-section {
+    margin-bottom: 16px;
+}
+
+.goal-amounts {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.goal-current {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.goal-target {
+    font-size: 1rem;
+    color: var(--text-light);
+}
+
+.goal-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 8px;
+}
+
+.goal-limit {
+    font-style: italic;
+}
+
+.goal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.goal-monthly {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.priority-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.priority-1 {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.priority-2 {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.priority-3 {
+    background: #e0f2fe;
+    color: #075985;
+}
+
 @media (max-width: 480px) {
     .card-grid {
         grid-template-columns: 1fr;
@@ -886,6 +1003,10 @@ select.form-input {
     }
 
     .budget-category-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .goals-grid {
         grid-template-columns: 1fr;
     }
 }

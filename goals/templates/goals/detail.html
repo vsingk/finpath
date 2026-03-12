@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}{{ goal.name }} - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="savings-header">
+        <h2>{{ goal.name }}</h2>
+        <p>
+            <span class="goal-type-badge">{{ goal.get_goal_type_display }}</span>
+            <span class="priority-badge priority-{{ goal.priority }}">{{ goal.get_priority_display }}</span>
+        </p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-value">${{ goal.current_amount|floatformat:2 }}</div>
+            <div class="stat-label">Current Amount</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#127919;</div>
+            <div class="stat-value">${{ goal.target_amount|floatformat:2 }}</div>
+            <div class="stat-label">Target Amount</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128200;</div>
+            <div class="stat-value">{{ goal.progress_percent }}%</div>
+            <div class="stat-label">Progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128197;</div>
+            <div class="stat-value">
+                {% if goal.months_to_goal %}
+                {{ goal.months_to_goal }}
+                {% else %}
+                --
+                {% endif %}
+            </div>
+            <div class="stat-label">Months to Goal</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section" style="text-align: right;">
+        <a href="{% url 'edit_goal' goal.pk %}" class="btn btn-outline btn-sm">Edit Goal</a>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="card" style="padding: 32px;">
+            <div class="goal-amounts" style="text-align: center; margin-bottom: 16px;">
+                <span style="font-size: 1.1rem; color: var(--text-light);">
+                    ${{ goal.remaining_amount|floatformat:2 }} remaining to reach your goal
+                </span>
+            </div>
+            <div class="progress-bar-container" style="height: 20px;">
+                <div class="progress-bar" style="width: {{ goal.progress_percent }}%"></div>
+            </div>
+            {% if goal.is_retirement_account and goal.get_annual_limit %}
+            <p style="text-align: center; margin-top: 12px; color: var(--text-light); font-size: 0.9rem;">
+                Annual IRS contribution limit: ${{ goal.get_annual_limit|floatformat:0 }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if goal.notes %}
+    <div class="dashboard-section">
+        <div class="card">
+            <h4 style="margin-bottom: 8px;">Notes</h4>
+            <p style="color: var(--text-light);">{{ goal.notes }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-section">
+        <h3>Progress Over Time</h3>
+        <div class="chart-card">
+            <canvas id="progressChart"></canvas>
+            {% if not contributions %}
+            <p class="chart-empty">Add your first contribution to see progress chart.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="form-card savings-form-card">
+            <h3>Add Contribution</h3>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="savings-form-row">
+                    {% for field in form.visible_fields %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                        <small class="form-error">{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                    {{ form.goal }}
+                </div>
+                <button type="submit" class="btn btn-primary">Add Contribution</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Contribution History</h3>
+        {% if contributions %}
+        <div class="entries-table-wrapper">
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Note</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contrib in contributions %}
+                    <tr>
+                        <td>{{ contrib.date|date:"M d, Y" }}</td>
+                        <td class="entry-amount">${{ contrib.amount|floatformat:2 }}</td>
+                        <td class="entry-note">{{ contrib.note|default:"--" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'delete_contribution' contrib.pk %}" class="delete-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-delete" title="Delete contribution" 
+                                        onclick="return confirm('Delete this contribution? This will subtract ${{ contrib.amount }} from the goal total.')">
+                                    &times;
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card" style="text-align:center; padding: 40px;">
+            <p>No contributions yet. Use the form above to add your first one!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+    const chartData = {{ chart_data|safe }};
+
+    if (chartData.labels && chartData.labels.length > 0) {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    {
+                        label: 'Progress ($)',
+                        data: chartData.data,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#16a34a',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                    },
+                    {
+                        label: 'Target',
+                        data: new Array(chartData.labels.length).fill(chartData.target),
+                        borderColor: '#dc2626',
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString(undefined, {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: function(val) { return '$' + val.toLocaleString(); } }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

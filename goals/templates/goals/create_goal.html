@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Create Goal - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="savings-header">
+        <h2>Create New Savings Goal</h2>
+        <p>Set a target and track your progress toward your financial goals.</p>
+    </div>
+
+    <div class="form-card" style="max-width: 600px;">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small class="form-help">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <small class="form-error">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 24px;">
+                <button type="submit" class="btn btn-primary">Create Goal</button>
+                <a href="{% url 'goals_overview' %}" class="btn btn-outline" style="margin-left: 8px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
