@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Allocate Budget - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="savings-header">
+        <h2>Allocate Remaining Budget</h2>
+        <p>{{ current_month|date:"F Y" }} — Divide your remaining budget across savings goals.</p>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="card" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; text-align: center;">
+                <div>
+                    <div style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 4px;">Monthly Income</div>
+                    <div style="font-size: 1.5rem; font-weight: 600;">${{ budget.total_income|floatformat:2 }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 4px;">Total Spent</div>
+                    <div style="font-size: 1.5rem; font-weight: 600;">${{ budget.total_income|floatformat:2|add:"-"|add:remaining|floatformat:2 }}</div>
+                </div>
+                <div style="border-left: 2px solid var(--primary); padding-left: 24px;">
+                    <div style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 4px;">Available to Allocate</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">${{ remaining|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if not goals %}
+    <div class="dashboard-section">
+        <div class="card" style="text-align:center; padding: 48px;">
+            <div class="card-icon">&#127919;</div>
+            <h3>No active goals</h3>
+            <p style="color: var(--text-light); margin-bottom: 20px;">
+                Create savings goals first, then come back to allocate your remaining budget.
+            </p>
+            <a href="{% url 'create_goal' %}" class="btn btn-primary">Create Your First Goal</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="dashboard-section">
+        <div class="form-card" style="max-width: 800px;">
+            <h3>Allocate to Goals</h3>
+            <p style="color: var(--text-light); margin-bottom: 24px;">
+                Enter how much you want to allocate to each goal this month.
+            </p>
+
+            <form method="post" novalidate id="allocationForm">
+                {% csrf_token %}
+
+                {% for goal in goals %}
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 16px; border: 1px solid {% if goal.id in already_allocated_goal_ids %}var(--primary){% else %}var(--border){% endif %}; border-radius: var(--radius); background: {% if goal.id in already_allocated_goal_ids %}#f0fdf4{% else %}var(--white){% endif %}; margin-bottom: 16px; {% if goal.id in already_allocated_goal_ids %}opacity: 0.7;{% endif %}">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <strong>{{ goal.name }}</strong>
+                            <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: var(--primary-light); color: var(--primary-dark);">
+                                {{ goal.get_goal_type_display }}
+                            </span>
+                            {% if goal.id in already_allocated_goal_ids %}
+                            <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; background: var(--success); color: white;">
+                                ✓ Already Allocated
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-light); display: flex; align-items: center; gap: 8px;">
+                            <span>${{ goal.current_amount|floatformat:2 }} / ${{ goal.target_amount|floatformat:2 }}</span>
+                            <span>·</span>
+                            <span>{{ goal.progress_percent }}% complete</span>
+                            {% if goal.is_retirement_account and goal.get_annual_limit %}
+                            <span>·</span>
+                            <span style="font-size: 0.85rem;">Limit: ${{ goal.get_annual_limit|floatformat:0 }}/year</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="width: 150px;">
+                        <label for="id_goal_{{ goal.id }}" style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85rem;">Amount ($)</label>
+                        <input 
+                            type="number" 
+                            name="goal_{{ goal.id }}" 
+                            id="id_goal_{{ goal.id }}"
+                            value="{% if goal.id in already_allocated_goal_ids %}0{% else %}{{ goal.monthly_contribution|default:'0' }}{% endif %}"
+                            class="form-input goal-input" 
+                            step="0.01" 
+                            min="0"
+                            max="{{ remaining }}"
+                            placeholder="0.00"
+                            {% if goal.id in already_allocated_goal_ids %}disabled title="Already allocated this month. Delete the existing allocation to change it."{% endif %}
+                            style="width: 100%;">
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-error" style="margin-top: 16px;">
+                    {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div style="margin-top: 24px; padding: 16px; background: var(--bg); border-radius: var(--radius);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-weight: 600;">Total Allocated:</span>
+                            <span id="totalAllocated" style="font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-left: 12px;">$0.00</span>
+                        </div>
+                        <div>
+                            <span style="font-weight: 600;">Remaining:</span>
+                            <span id="remainingAmount" style="font-size: 1.2rem; font-weight: 700; margin-left: 12px;">${{ remaining|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary">Save Allocations</button>
+                    <a href="{% url 'goals_overview' %}" class="btn btn-outline" style="margin-left: 8px;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const remainingBudget = parseFloat('{{ remaining }}');
+    const form = document.getElementById('allocationForm');
+    
+    if (form) {
+        const inputs = form.querySelectorAll('input.goal-input');
+        const totalDisplay = document.getElementById('totalAllocated');
+        const remainingDisplay = document.getElementById('remainingAmount');
+        
+        function updateTotals() {
+            let total = 0;
+            inputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+            
+            const remaining = remainingBudget - total;
+            
+            totalDisplay.textContent = '$' + total.toFixed(2);
+            remainingDisplay.textContent = '$' + remaining.toFixed(2);
+            
+            if (remaining < 0) {
+                remainingDisplay.style.color = 'var(--error)';
+            } else if (remaining === 0) {
+                remainingDisplay.style.color = 'var(--success)';
+            } else {
+                remainingDisplay.style.color = 'var(--text)';
+            }
+        }
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', updateTotals);
+        });
+        
+        updateTotals();
+    }
+</script>
+{% endblock %}

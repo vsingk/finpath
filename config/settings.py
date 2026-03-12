@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'pages',
     'savings',
     'budgets',
+    'goals', 
 ]
 
 MIDDLEWARE = [
