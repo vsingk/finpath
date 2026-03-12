@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Savings Progress - FinPath{% endblock %}
-
+{%load static%}
 {% block content %}
 <div class="container">
     <div class="savings-header">
@@ -46,7 +46,59 @@
             </form>
         </div>
     </div>
+    <div class="dashboard-section" >
+        <div class="form-card savings-form-card" style=" width: 100%;" >
+            <div class="savings-form-row" style="width: 100%; display: flex; flex-direction: row; background-color: none;" >
+    
+                <div class="form-group" style="width:100%; ">
+                    <h3>Set a Savings Goal</h3>
+                    <label for="savingsGoal">Enter Goal Savings</label>
+                    <input type="text" id="savingsGoal" placeholder="$">
+               
+                     
+                    <label for="savingsGoalDate">Enter Target Date</label>
+                    <input type="month" id="goalDate">
+              
+                    <label for="interestRate">Enter Interest Rate (yearly)</label>
+                    <input type="text" id="interestRate" placeholder="%">
+                    <h4 id="result">Result: </h4>
+                </div>
+                <div class="chart-card" style="display: none; width: 100%; height: 100%; background-color: none;">
+                    <canvas id="savingsGoalChart" style="height: 100%; width: 100%;"></canvas>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" id="submitSavingsGoal">submit</button>
+            
+           
 
+        </div>
+       
+        </div>
+    </div>
+    <div class="form-card savings-form-card">
+        <div class="savings-form-row" style="width: 100%; display: flex; flex-direction: row; background-color: none;">
+            <div class="form-group">
+                <h3>Projection Based on Monthly Deposit</h3>
+                <label for="savingsAmount">Enter Monthly Deposit</label>
+                <input type="text" id="savingsAmount" placeholder="$">
+            
+                    
+                <label for="goalAmount">Enter Target Amount</label>
+                <input type="text" id="goalAmount">
+            
+                <label for="interestRate2">Enter Interest Rate (yearly)</label>
+                <input type="text" id="interestRate2" placeholder="%">
+                <h4 id="result2">Result: </h4>
+            </div>
+            <div class="chart-card" id="chart-card-monthly" style="display: none; width: auto; height: auto; background-color: none; ">
+                <canvas id="projectedChart" style="height: 100%; width: 100%;"></canvas>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" id="submitDepositGoal">submit</button>
+    </div>
+
+     
+            
     <div class="dashboard-section">
         <h3>Cumulative Savings Over Time</h3>
         <div class="chart-card">
@@ -226,4 +278,5 @@
         renderProjection(1);
     }
 </script>
+<script src="{% static 'js/projectedMonthlyBudget.js'%}"></script>
 {% endblock %}
