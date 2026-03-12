@@ -58,7 +58,7 @@ def delete_entry(request, pk):
         messages.success(request, 'Entry deleted.')
     return redirect('savings_progress')
 
-
+ 
 def _calculate_average_monthly(entries, today):
     if not entries.exists():
         return Decimal('0.00')
