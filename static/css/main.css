@@ -272,6 +272,8 @@ a:hover {
 }
 
 .form-group {
+    background-color: none;
+    
     margin-bottom: 20px;
 }
 
@@ -558,6 +560,7 @@ select.form-input {
     grid-template-columns: 1fr 1fr 2fr;
     gap: 16px;
     align-items: start;
+    
 }
 
 /* ===== Chart Cards ===== */
