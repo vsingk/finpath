@@ -16,27 +16,21 @@ from .forms import SavingsGoalForm, GoalContributionForm, BulkAllocationForm
 
 @login_required
 def goals_overview(request):
-    """Main dashboard for all savings goals"""
     goals = SavingsGoal.objects.filter(user=request.user, is_active=True)
     
-    # Calculate totals
     total_target = goals.aggregate(total=Sum('target_amount'))['total'] or Decimal('0.00')
     total_saved = goals.aggregate(total=Sum('current_amount'))['total'] or Decimal('0.00')
     total_monthly = goals.aggregate(total=Sum('monthly_contribution'))['total'] or Decimal('0.00')
     
-    # Overall progress
     overall_progress = round((total_saved / total_target * 100), 1) if total_target > 0 else 0
     
-    # Categorize goals
     retirement_goals = goals.filter(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
     purchase_goals = goals.exclude(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
     
-    # Recent contributions
     recent_contributions = GoalContribution.objects.filter(
         goal__user=request.user
     )[:10]
-    
-    # Get current month allocation if exists
+
     today = timezone.now().date()
     current_month = today.replace(day=1)
     current_allocation = MonthlyAllocation.objects.filter(
@@ -60,7 +54,6 @@ def goals_overview(request):
 
 @login_required
 def create_goal(request):
-    """Create a new savings goal"""
     if request.method == 'POST':
         form = SavingsGoalForm(request.POST)
         if form.is_valid():
@@ -77,7 +70,6 @@ def create_goal(request):
 
 @login_required
 def edit_goal(request, pk):
-    """Edit an existing goal"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     
     if request.method == 'POST':
@@ -94,7 +86,6 @@ def edit_goal(request, pk):
 
 @login_required
 def delete_goal(request, pk):
-    """Delete a goal"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     
     if request.method == 'POST':
@@ -107,16 +98,13 @@ def delete_goal(request, pk):
 
 @login_required
 def goal_detail(request, pk):
-    """Detailed view of a single goal with contribution history"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     contributions = goal.contributions.all()
-    
-    # Handle contribution form
+
     if request.method == 'POST':
         form = GoalContributionForm(request.POST)
         if form.is_valid():
             contribution = form.save(commit=False)
-            # Update goal's current amount
             goal.current_amount += contribution.amount
             goal.save()
             contribution.save()
@@ -126,7 +114,6 @@ def goal_detail(request, pk):
         form = GoalContributionForm(initial={'goal': goal, 'date': timezone.now().date()})
         form.fields['goal'].widget = forms.HiddenInput()
     
-    # Build chart data for progress over time
     chart_data = _build_goal_progress_chart(contributions, goal.target_amount)
     
     context = {
@@ -140,12 +127,6 @@ def goal_detail(request, pk):
 
 @login_required
 def delete_contribution(request, pk):
-    """
-    Delete a contribution.
-    Note: Signals automatically handle:
-    - Updating goal's current amount
-    - Deleting corresponding budget expense
-    """
     contribution = get_object_or_404(GoalContribution, pk=pk, goal__user=request.user)
     goal = contribution.goal
     
@@ -162,27 +143,17 @@ def delete_contribution(request, pk):
 @login_required
 @transaction.atomic
 def allocate_budget(request):
-    """
-    Allocate remaining budget from current month to savings goals.
-    Creates actual budget expenses and goal contributions.
-    
-    Features:
-    - Creates category based on goal type (401k, Emergency Fund, etc.)
-    - Prevents duplicate allocations for same goal in same month
-    """
     from budgets.models import Budget, BudgetCategory, Expense
     
     today = timezone.now().date()
     current_month = today.replace(day=1)
     
-    # Get current month's budget
     budget = Budget.objects.filter(user=request.user, month=current_month).first()
     
     if not budget:
         messages.warning(request, 'Please create a budget for this month first.')
         return redirect('budget_setup')
     
-    # Calculate remaining budget
     expenses = Expense.objects.filter(user=request.user, category__budget=budget)
     total_spent = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     remaining = budget.total_income - total_spent
@@ -191,22 +162,18 @@ def allocate_budget(request):
         messages.info(request, 'No remaining budget to allocate this month.')
         return redirect('goals_overview')
     
-    # Get or create monthly allocation
     allocation, created = MonthlyAllocation.objects.get_or_create(
         user=request.user,
         month=current_month,
         defaults={'remaining_budget': remaining}
     )
     
-    # Update remaining budget if it changed
     if not created and allocation.remaining_budget != remaining:
         allocation.remaining_budget = remaining
         allocation.save()
-    
-    # Get active goals
+
     goals = SavingsGoal.objects.filter(user=request.user, is_active=True)
     
-    # Check which goals already have allocations this month
     already_allocated_goal_ids = set(
         allocation.goal_allocations.values_list('goal_id', flat=True)
     )
@@ -219,7 +186,6 @@ def allocate_budget(request):
         )
         
         if form.is_valid():
-            # Validate: Check for duplicate allocations
             errors = []
             for field_name, amount in form.cleaned_data.items():
                 if field_name.startswith('goal_') and amount and amount > 0:
@@ -234,7 +200,6 @@ def allocate_budget(request):
             if errors:
                 for error in errors:
                     messages.error(request, error)
-                # Return form with data
                 context = {
                     'form': form,
                     'budget': budget,
@@ -246,7 +211,6 @@ def allocate_budget(request):
                 }
                 return render(request, 'goals/allocate.html', context)
             
-            # Create allocations and transactions
             total_allocated = Decimal('0')
             contributions_created = 0
             categories_created = []
@@ -256,10 +220,8 @@ def allocate_budget(request):
                     goal_id = int(field_name.split('_')[1])
                     goal = goals.get(id=goal_id)
                     
-                    # Determine category name based on goal type
                     category_name = _get_category_name_for_goal_type(goal.goal_type)
                     
-                    # Get or create category for this goal type
                     category, cat_created = BudgetCategory.objects.get_or_create(
                         budget=budget,
                         name=category_name,
@@ -269,14 +231,12 @@ def allocate_budget(request):
                     if cat_created:
                         categories_created.append(category_name)
                     
-                    # 1. Record the allocation (planning record)
                     GoalAllocation.objects.create(
                         monthly_allocation=allocation,
                         goal=goal,
                         amount=amount
                     )
                     
-                    # 2. Create budget expense (actual expense in budget)
                     Expense.objects.create(
                         user=request.user,
                         category=category,
@@ -285,7 +245,6 @@ def allocate_budget(request):
                         description=f'Allocation to {goal.name}',
                     )
                     
-                    # 3. Create goal contribution (increase goal balance)
                     GoalContribution.objects.create(
                         goal=goal,
                         amount=amount,
@@ -293,14 +252,12 @@ def allocate_budget(request):
                         note=f'Monthly allocation for {current_month.strftime("%B %Y")}'
                     )
                     
-                    # 4. Update goal's current amount
                     goal.current_amount += amount
                     goal.save()
                     
                     total_allocated += amount
                     contributions_created += 1
             
-            # Build success message
             success_msg = f'Successfully allocated ${total_allocated:.2f} to {contributions_created} goal(s)!'
             if categories_created:
                 success_msg += f' Created budget categories: {", ".join(categories_created)}.'
@@ -324,7 +281,6 @@ def allocate_budget(request):
 
 @login_required
 def allocation_history(request):
-    """View history of monthly allocations"""
     allocations = MonthlyAllocation.objects.filter(user=request.user)
     
     context = {
@@ -334,26 +290,18 @@ def allocation_history(request):
 
 
 def _get_category_name_for_goal_type(goal_type):
-    """
-    Map goal types to budget category names.
-    Groups similar goals into logical categories.
-    """
     category_mapping = {
-        # Retirement accounts
         '401k': '401(k) Contributions',
         'roth_ira': 'Roth IRA',
         'traditional_ira': 'Traditional IRA',
         
-        # Emergency & savings
         'emergency': 'Emergency Fund',
         'custom': 'Savings Goals',
         
-        # Major purchases
         'house': 'House Down Payment',
         'car': 'Car Purchase',
         'purchase': 'Major Purchases',
         
-        # Specific goals
         'vacation': 'Vacation/Travel',
         'education': 'Education',
         'debt': 'Debt Payoff',
@@ -363,7 +311,6 @@ def _get_category_name_for_goal_type(goal_type):
 
 
 def _build_goal_progress_chart(contributions, target_amount):
-    """Build chart data showing progress toward goal over time"""
     if not contributions:
         return {'labels': [], 'data': [], 'target': float(target_amount)}
     
@@ -377,7 +324,6 @@ def _build_goal_progress_chart(contributions, target_amount):
         date_str = contrib.date.isoformat()
         
         if labels and labels[-1] == date_str:
-            # Multiple contributions same day - update last point
             data[-1] = float(running_total)
         else:
             labels.append(date_str)

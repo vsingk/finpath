@@ -122,7 +122,6 @@ class GoalAllocationForm(forms.ModelForm):
 
 
 class BulkAllocationForm(forms.Form):
-    """Form for allocating remaining budget across multiple goals at once"""
     def __init__(self, *args, goals=None, remaining_budget=None, **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -130,19 +129,15 @@ class BulkAllocationForm(forms.Form):
             for goal in goals:
                 field_name = f'goal_{goal.id}'
                 
-                # Calculate initial value
                 initial_value = Decimal('0.00')
                 
-                # Pre-fill with monthly contribution if it exists
                 if goal.monthly_contribution and goal.monthly_contribution > 0:
                     initial_value = goal.monthly_contribution
                 
-                # If we have a remaining budget, cap the initial value
                 if remaining_budget is not None and remaining_budget > 0:
                     if initial_value > remaining_budget:
                         initial_value = remaining_budget
                 
-                # Create the field
                 self.fields[field_name] = forms.DecimalField(
                     label=goal.name,
                     required=False,
@@ -155,7 +150,7 @@ class BulkAllocationForm(forms.Form):
                         'placeholder': '0.00',
                         'step': '0.01',
                         'min': '0',
-                        'value': str(initial_value),  # Explicitly set value
+                        'value': str(initial_value),
                     })
                 )
         
