@@ -84,6 +84,13 @@ def dashboard_view(request):
                 'url': 'savings_progress',
             },
             {
+                'icon': '\U0001f3c6',
+                'title': 'Savings Goals',
+                'description': 'Set goals for purchases, retirement accounts, and emergency funds.',
+                'status': 'Active',
+                'url': 'goals_overview',
+            },
+            {
                 'icon': '\U0001f4d6',
                 'title': 'Learning Center',
                 'description': 'Bite-sized lessons on taxes, credit, and investing.',

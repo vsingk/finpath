@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Allocation History - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="savings-header">
+        <h2>Allocation History</h2>
+        <p>Track how you've allocated remaining budget to goals each month.</p>
+    </div>
+
+    {% if allocations %}
+    <div class="dashboard-section">
+        {% for allocation in allocations %}
+        <div class="card" style="margin-bottom: 20px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0;">{{ allocation.month|date:"F Y" }}</h3>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.875rem; color: var(--text-light);">Remaining Budget</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                        ${{ allocation.remaining_budget|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+
+            {% if allocation.get_allocations %}
+            <div class="entries-table-wrapper">
+                <table class="entries-table">
+                    <thead>
+                        <tr>
+                            <th>Goal</th>
+                            <th>Type</th>
+                            <th>Allocated</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for goal_alloc in allocation.get_allocations %}
+                        <tr>
+                            <td><a href="{% url 'goal_detail' goal_alloc.goal.pk %}">{{ goal_alloc.goal.name }}</a></td>
+                            <td>{{ goal_alloc.goal.get_goal_type_display }}</td>
+                            <td class="entry-amount">${{ goal_alloc.amount|floatformat:2 }}</td>
+                            <td class="entry-note">{{ goal_alloc.notes|default:"--" }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr style="font-weight: 600; background: var(--bg);">
+                            <td colspan="2">Total Allocated</td>
+                            <td class="entry-amount">${{ allocation.total_allocated|floatformat:2 }}</td>
+                            <td></td>
+                        </tr>
+                        <tr style="font-weight: 600;">
+                            <td colspan="2">Unallocated</td>
+                            <td class="entry-amount {% if allocation.unallocated_amount > 0 %}unallocated-amount{% endif %}">
+                                ${{ allocation.unallocated_amount|floatformat:2 }}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="color: var(--text-light); text-align: center; padding: 20px;">
+                No allocations made for this month.
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="dashboard-section">
+        <div class="card" style="text-align:center; padding: 48px;">
+            <div class="card-icon">&#128202;</div>
+            <h3>No allocation history yet</h3>
+            <p style="color: var(--text-light); margin-bottom: 20px;">
+                Start allocating your remaining budget to savings goals to build your history.
+            </p>
+            <a href="{% url 'allocate_budget' %}" class="btn btn-primary">Allocate Budget</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
