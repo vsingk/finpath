@@ -1,15 +1,84 @@
 import json
 from decimal import Decimal
-
+import math
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum
 from django.utils import timezone
-
+from datetime import datetime as Date
+from django.utils.dateparse import parse_date
 from .models import Budget, BudgetCategory, Expense, DEFAULT_CATEGORIES
 from .forms import BudgetForm, BudgetCategoryFormSet, ExpenseForm
+from django.http import JsonResponse, HttpResponse
+from datetime import date
+@login_required
+def projected_Budget(request, n, i, a):
+    #print(a)
+    targetDate = parse_date(a)
+    today = timezone.now().month
+    savingsGoal = Decimal(n)
+    
+    year, month = map(int, a.split("-"))
+    target_date = date(year, month, 1)
 
+    today = timezone.localdate().replace(day=1)
+
+    if (target_date < today):
+        return JsonResponse({'error': 'Target date must be in the future.'}, status = 400)
+    
+    differenceInDays = (target_date - today).days
+    difasMonths = math.ceil(differenceInDays / 30)
+    print("differeence in months: ", difasMonths)
+
+    interestRate = (Decimal(i) / Decimal(100)) / Decimal(12)
+    print("IR: ", interestRate)
+    print("goal savings: ", n)
+    denomenator = ((1+interestRate) ** difasMonths) - 1
+    division = interestRate / denomenator
+    proj = savingsGoal * division
+    labels = []
+    monthlyRepresentation = []
+    for month in range(difasMonths):
+        labels.append(month + 1)
+        if month == 0:
+            monthlyRepresentation.append(round(Decimal(proj),2))
+        else:
+            lastMonth = monthlyRepresentation[month-1]
+            monthlyRepresentation.append(round((Decimal(lastMonth) * (1 + interestRate)) + Decimal(proj), 2))
+            
+        
+        
+    #print(labels )
+    #print(monthlyRepresentation)
+    return JsonResponse({'projected amount per month': math.ceil(proj), 'labels': labels, 'data':monthlyRepresentation})
+
+@login_required
+def monthlyDepositProject(request, monthlyDeposit, goalAmount, interestRate):
+    print(interestRate, type(interestRate))
+    monthly = Decimal(monthlyDeposit)
+    goal = Decimal(goalAmount)
+    ir = ((Decimal(interestRate))/Decimal(100)) / Decimal(12)
+    print("monthly: ", monthly, "goal: ", goal, "IR: ", ir)
+    Axi = ((goal * ir) / monthly) + 1
+    b = math.log(Axi, 10)
+    c = math.log(1+ir, 10)
+    months = b/c
+    print("months: ", months)
+
+    labels = []
+    monthlyProjection = []
+    for month in range(math.ceil(months)):
+        labels.append(month + 1)
+        if month == 0:
+            monthlyProjection.append(round(monthly,2))
+        else:
+            lastMonth = monthlyProjection[month-1]
+            monthlyProjection.append(round((Decimal(lastMonth) * (1 + ir) + Decimal(monthly)), 2))
+
+    return JsonResponse({'months': math.ceil(months), 'labels': labels, 'data': monthlyProjection})
+
+    
 
 @login_required
 def budget_overview(request):
@@ -45,7 +114,7 @@ def budget_overview(request):
     total_spent = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     remaining = total_income - total_spent
     unallocated = total_income - total_allocated
-
+    monthly_income = total_income / 12
     category_data = _build_category_data(categories)
     sankey_data = _build_sankey_data(budget, categories, total_income)
     recent_expenses = expenses[:20]
@@ -56,6 +125,7 @@ def budget_overview(request):
         'current_month': current_month,
         'form': form,
         'total_income': total_income,
+        'monthly_income': monthly_income,
         'total_allocated': total_allocated,
         'total_spent': total_spent,
         'remaining': remaining,
@@ -83,7 +153,7 @@ def budget_setup(request):
             budget_obj.save()
 
             formset = BudgetCategoryFormSet(request.POST, instance=budget_obj)
-            if formset.is_valid():
+            if formset.is_valid():  
                 formset.save()
                 messages.success(request, f'Budget for {budget_obj.month.strftime("%B %Y")} saved!')
                 return redirect('budget_overview')
@@ -149,3 +219,4 @@ def _build_sankey_data(budget, categories, total_income):
             rows.append(['Total Spent', cat.name, float(spent)])
 
     return rows
+
