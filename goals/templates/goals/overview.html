@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Savings Goals - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="savings-header">
+        <h2>Savings Goals</h2>
+        <p>Set goals, track progress, and allocate your remaining budget.</p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">&#127919;</div>
+            <div class="stat-value">${{ total_saved|floatformat:2 }}</div>
+            <div class="stat-label">Total Saved</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#127919;</div>
+            <div class="stat-value">${{ total_target|floatformat:2 }}</div>
+            <div class="stat-label">Total Target</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128200;</div>
+            <div class="stat-value">{{ overall_progress }}%</div>
+            <div class="stat-label">Overall Progress</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-value">${{ total_monthly|floatformat:2 }}</div>
+            <div class="stat-label">Monthly Target</div>
+        </div>
+    </div>
+
+    <div class="dashboard-section" style="text-align: right; margin-bottom: 20px;">
+        <a href="{% url 'create_goal' %}" class="btn btn-primary">Create New Goal</a>
+        <a href="{% url 'allocate_budget' %}" class="btn btn-outline" style="margin-left: 8px;">Allocate Budget</a>
+    </div>
+
+    {% if current_allocation %}
+    <div class="dashboard-section">
+        <div class="alert alert-info">
+            <strong>This Month's Allocation:</strong> 
+            You have allocated ${{ current_allocation.total_allocated|floatformat:2 }} 
+            out of ${{ current_allocation.remaining_budget|floatformat:2 }} remaining budget.
+            {% if current_allocation.unallocated_amount > 0 %}
+            <a href="{% url 'allocate_budget' %}">Allocate remaining ${{ current_allocation.unallocated_amount|floatformat:2 }}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if retirement_goals %}
+    <div class="dashboard-section">
+        <h3>&#128188; Retirement Goals</h3>
+        <div class="goals-grid">
+            {% for goal in retirement_goals %}
+            <a href="{% url 'goal_detail' goal.pk %}" class="goal-card card-link">
+                <div class="goal-header">
+                    <div class="goal-type-badge">{{ goal.get_goal_type_display }}</div>
+                    <h4>{{ goal.name }}</h4>
+                </div>
+                <div class="goal-progress-section">
+                    <div class="goal-amounts">
+                        <span class="goal-current">${{ goal.current_amount|floatformat:2 }}</span>
+                        <span class="goal-target">/ ${{ goal.target_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ goal.progress_percent }}%"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>{{ goal.progress_percent }}% complete</span>
+                        {% if goal.get_annual_limit %}
+                        <span class="goal-limit">Annual limit: ${{ goal.get_annual_limit|floatformat:0 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="goal-footer">
+                    <span class="goal-monthly">+${{ goal.monthly_contribution|floatformat:2 }}/month</span>
+                    <span class="priority-badge priority-{{ goal.priority }}">
+                        {{ goal.get_priority_display }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if purchase_goals %}
+    <div class="dashboard-section">
+        <h3>&#128176; Savings & Purchase Goals</h3>
+        <div class="goals-grid">
+            {% for goal in purchase_goals %}
+            <a href="{% url 'goal_detail' goal.pk %}" class="goal-card card-link">
+                <div class="goal-header">
+                    <div class="goal-type-badge">{{ goal.get_goal_type_display }}</div>
+                    <h4>{{ goal.name }}</h4>
+                </div>
+                <div class="goal-progress-section">
+                    <div class="goal-amounts">
+                        <span class="goal-current">${{ goal.current_amount|floatformat:2 }}</span>
+                        <span class="goal-target">/ ${{ goal.target_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ goal.progress_percent }}%"></div>
+                    </div>
+                    <div class="goal-stats">
+                        <span>{{ goal.progress_percent }}% complete</span>
+                        {% if goal.months_to_goal %}
+                        <span>~{{ goal.months_to_goal }} months to goal</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="goal-footer">
+                    <span class="goal-monthly">+${{ goal.monthly_contribution|floatformat:2 }}/month</span>
+                    <span class="priority-badge priority-{{ goal.priority }}">
+                        {{ goal.get_priority_display }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not goals %}
+    <div class="dashboard-section">
+        <div class="card" style="text-align:center; padding: 48px;">
+            <div class="card-icon">&#127919;</div>
+            <h3>No savings goals yet</h3>
+            <p style="color: var(--text-light); margin-bottom: 20px;">
+                Create your first savings goal to start tracking your progress toward major purchases, retirement, or emergency funds.
+            </p>
+            <a href="{% url 'create_goal' %}" class="btn btn-primary">Create Your First Goal</a>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if recent_contributions %}
+    <div class="dashboard-section">
+        <h3>Recent Contributions</h3>
+        <div class="entries-table-wrapper">
+            <table class="entries-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Goal</th>
+                        <th>Amount</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contrib in recent_contributions %}
+                    <tr>
+                        <td>{{ contrib.date|date:"M d, Y" }}</td>
+                        <td><a href="{% url 'goal_detail' contrib.goal.pk %}">{{ contrib.goal.name }}</a></td>
+                        <td class="entry-amount">${{ contrib.amount|floatformat:2 }}</td>
+                        <td class="entry-note">{{ contrib.note|default:"--" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
