@@ -20,9 +20,13 @@ document.addEventListener('DOMContentLoaded', function(){
             alert("Please enter an interest rate.");
         }
         
+        submitButton.disabled = true;
+        submitButton.textContent = 'Loading...';
         fetch(`/budgets/projected-budget/${savingsGoal}/${interestRate}/${goalDate}/`)
         .then(Response => Response.json())
         .then(data => {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit';
             // console.log("data",data);
             
             
@@ -91,9 +95,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
             })
         })
+        .catch(() => {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit';
+        });
         //alert('calculating months to achieve savings goal...');
         // Handle form submission logic here
-        
+
     });
 
     
@@ -127,9 +135,13 @@ document.addEventListener('DOMContentLoaded', function(){
         if(isNaN(interestRate)){
             alert("Please enter a valid number for Interest Rate.");
         }
+        submitMonthlyButton.disabled = true;
+        submitMonthlyButton.textContent = 'Loading...';
         fetch(`/budgets/monthly-deposit-project/${monthlyDeposit}/${goalAmount}/${interestRate}/`)
         .then(Response => Response.json())
         .then(data => {
+            submitMonthlyButton.disabled = false;
+            submitMonthlyButton.textContent = 'Submit';
             //console.log("data",data);
             const result2 = document.getElementById('result2');
             console.log("months... ",data.months)
@@ -217,9 +229,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
             })
         })
-        })
+        .catch(() => {
+            submitMonthlyButton.disabled = false;
+            submitMonthlyButton.textContent = 'Submit';
+        });
         //alert('calculating months to achieve savings goal...');
-        
-   
+
     });
 

@@ -18,9 +18,14 @@ from .forms import SavingsGoalForm, GoalContributionForm, BulkAllocationForm
 def goals_overview(request):
     goals = SavingsGoal.objects.filter(user=request.user, is_active=True)
     
-    total_target = goals.aggregate(total=Sum('target_amount'))['total'] or Decimal('0.00')
-    total_saved = goals.aggregate(total=Sum('current_amount'))['total'] or Decimal('0.00')
-    total_monthly = goals.aggregate(total=Sum('monthly_contribution'))['total'] or Decimal('0.00')
+    totals = goals.aggregate(
+        total_target=Sum('target_amount'),
+        total_saved=Sum('current_amount'),
+        total_monthly=Sum('monthly_contribution'),
+    )
+    total_target = totals['total_target'] or Decimal('0.00')
+    total_saved = totals['total_saved'] or Decimal('0.00')
+    total_monthly = totals['total_monthly'] or Decimal('0.00')
     
     overall_progress = round((total_saved / total_target * 100), 1) if total_target > 0 else 0
     
@@ -29,7 +34,7 @@ def goals_overview(request):
     
     recent_contributions = GoalContribution.objects.filter(
         goal__user=request.user
-    )[:10]
+    ).select_related('goal')[:10]
 
     today = timezone.now().date()
     current_month = today.replace(day=1)
@@ -173,7 +178,8 @@ def allocate_budget(request):
         allocation.save()
 
     goals = SavingsGoal.objects.filter(user=request.user, is_active=True)
-    
+    goals_dict = {g.id: g for g in goals}
+
     already_allocated_goal_ids = set(
         allocation.goal_allocations.values_list('goal_id', flat=True)
     )
@@ -191,7 +197,7 @@ def allocate_budget(request):
                 if field_name.startswith('goal_') and amount and amount > 0:
                     goal_id = int(field_name.split('_')[1])
                     if goal_id in already_allocated_goal_ids:
-                        goal = goals.get(id=goal_id)
+                        goal = goals_dict[goal_id]
                         errors.append(
                             f'"{goal.name}" already has an allocation for {current_month.strftime("%B %Y")}. '
                             f'Delete the existing allocation first if you want to change it.'
@@ -218,8 +224,8 @@ def allocate_budget(request):
             for field_name, amount in form.cleaned_data.items():
                 if field_name.startswith('goal_') and amount and amount > 0:
                     goal_id = int(field_name.split('_')[1])
-                    goal = goals.get(id=goal_id)
-                    
+                    goal = goals_dict[goal_id]
+
                     category_name = _get_category_name_for_goal_type(goal.goal_type)
                     
                     category, cat_created = BudgetCategory.objects.get_or_create(
