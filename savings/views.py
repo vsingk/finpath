@@ -31,7 +31,7 @@ def savings_progress(request):
     total_saved = entries.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     month_start = today.replace(day=1)
     entries_this_month = entries.filter(date__gte=month_start).count()
-    avg_monthly = _calculate_average_monthly(entries, today)
+    avg_monthly = _calculate_average_monthly(entries, today, total_saved)
 
     recent_entries = entries[:20]
     historical_labels, historical_data = _build_historical_series(entries)
@@ -59,12 +59,13 @@ def delete_entry(request, pk):
     return redirect('savings_progress')
 
  
-def _calculate_average_monthly(entries, today):
+def _calculate_average_monthly(entries, today, total=None):
     if not entries.exists():
         return Decimal('0.00')
 
     first_entry = entries.order_by('date').first()
-    total = entries.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    if total is None:
+        total = entries.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     months_elapsed = (
         (today.year - first_entry.date.year) * 12

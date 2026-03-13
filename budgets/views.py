@@ -93,7 +93,7 @@ def budget_overview(request):
             'current_month': current_month,
         })
 
-    categories = budget.categories.all()
+    categories = budget.categories.annotate(total_spent=Sum('expenses__amount'))
     expenses = Expense.objects.filter(user=request.user, category__budget=budget)
 
     if request.method == 'POST':
@@ -196,7 +196,7 @@ def _build_category_data(categories):
     for cat in categories:
         if cat.allocated <= 0:
             continue
-        spent = cat.expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        spent = cat.total_spent or Decimal('0.00')
         percent = min(float(spent / cat.allocated * 100), 100) if cat.allocated > 0 else 0
         result.append({
             'name': cat.name,
@@ -214,7 +214,7 @@ def _build_sankey_data(budget, categories, total_income):
     rows = []
 
     for cat in categories:
-        spent = cat.expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        spent = cat.total_spent or Decimal('0.00')
         if spent > 0:
             rows.append(['Total Spent', cat.name, float(spent)])
 
