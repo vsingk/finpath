@@ -94,7 +94,8 @@ def dashboard_view(request):
                 'icon': '\U0001f4d6',
                 'title': 'Learning Center',
                 'description': 'Bite-sized lessons on taxes, credit, and investing.',
-                'status': 'Coming Soon',
+                'status': 'Active',
+                'url': 'learn',
             },
         ],
     }
