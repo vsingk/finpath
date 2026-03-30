@@ -236,4 +236,4 @@ document.addEventListener('DOMContentLoaded', function(){
         //alert('calculating months to achieve savings goal...');
 
     });
-
+});
