@@ -236,4 +236,46 @@ document.addEventListener('DOMContentLoaded', function(){
         //alert('calculating months to achieve savings goal...');
 
     });
+
+    const toggleSavings = document.querySelector('.toggleSavingsGoal');
+    const toggleMonthly = document.querySelector('.toggleMonthly');
+    const savingsGoal = document.querySelector('.SavingsGoal');
+    const monthlyAmount = document.querySelector('.MonthlyAmount');
+    const savingsCanvas = document.querySelector('#chart-card-savings');
+    const monthlyCanvas = document.querySelector('#chart-card-monthly');
+    const savingsCanvasActual = document.querySelector('#savingsGoalChart');
+    const monthlyCanvasActual = document.querySelector('#projectedChart');
+    
+    toggleSavings.addEventListener('click', function(){
+        if (savingsGoal.style.display === 'none'){
+            savingsGoal.style.display = 'block';
+            monthlyAmount.style.display = 'none';
+            toggleSavings.style.backgroundColor = '#148a48';
+            toggleSavings.style.color = 'white';
+            toggleMonthly.style.backgroundColor = '#f7f9f7'
+            toggleMonthly.style.color = '#148a48';
+            
+            savingsCanvas.style.display = 'block';
+            monthlyCanvas.style.display = 'none';
+            
+                        
+            
+        }
+    })
+    toggleMonthly.addEventListener('click', function(){
+        if (monthlyAmount.style.display === 'none'){
+            monthlyAmount.style.display = 'block';
+            savingsGoal.style.display = 'none';
+            toggleMonthly.style.backgroundColor = '#148a48';
+            toggleMonthly.style.color = 'white';
+            toggleSavings.style.backgroundColor = '#f7f9f7';
+            toggleSavings.style.color = '#148a48';
+            
+           
+            savingsCanvas.style.display = 'none';
+            monthlyCanvas.style.display = 'block';
+            
+            
+        }
+    })
 });
