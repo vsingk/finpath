@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}FinPath - Financial Guidance for New Earners{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="container">
+        <div class="hero-badge">&#10024; Built for your first real job</div>
+        <h1>Take Control of Your<br>Financial Future</h1>
+        <p class="hero-subtitle">Whether you're a student, intern, or recent grad — FinPath helps you build smart money habits from day one.</p>
+        {% if not user.is_authenticated %}
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-lg">Get Started Free &rarr;</a>
+        {% else %}
+        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard &rarr;</a>
+        {% endif %}
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+        <h2 class="section-title">Everything you need to start right</h2>
+        <p class="section-subtitle">Simple tools designed for people who are figuring out money for the first time.</p>
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-icon">&#128202;</div>
+                <h3>Budget Tracking</h3>
+                <p>Set up your first budget with simple, guided tools designed for beginners.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">&#127919;</div>
+                <h3>Goal Setting</h3>
+                <p>Define savings goals — emergency fund, travel, student loans — and track progress.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">&#128218;</div>
+                <h3>Learn as You Go</h3>
+                <p>Bite-sized lessons on taxes, investing, credit scores, and more.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">&#128161;</div>
+                <h3>Personalized Tips</h3>
+                <p>Get recommendations tailored to your income, goals, and career stage.</p>
+            </div>
+            <div class="card">
+                <div class="card-icon">&#128293;</div>
+                <h3>Streak &amp; Milestones</h3>
+                <p>Build daily habits, track your login streak, and earn milestones as you progress.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
