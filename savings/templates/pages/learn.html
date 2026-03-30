@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Learn — FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="learn-header">
+        <h2>Financial Literacy for Your First Job</h2>
+        <p>Practical, no-jargon guides for recent grads figuring out money for the first time.</p>
+    </div>
+
+    <div class="learn-filters" id="learn-filters">
+        {% for cat in categories %}
+        <button class="filter-btn {% if forloop.first %}filter-btn-active{% endif %}" data-category="{{ cat }}">
+            {{ cat }}
+        </button>
+        {% endfor %}
+    </div>
+
+    <div class="article-grid" id="article-grid">
+        {% for article in articles %}
+        <div class="article-card" data-category="{{ article.category }}">
+            <div class="article-card-top">
+                <span class="article-icon">{{ article.icon }}</span>
+                <span class="article-category article-category-{{ article.category_color }}">{{ article.category }}</span>
+            </div>
+            <h3 class="article-title">{{ article.title }}</h3>
+            <p class="article-summary">{{ article.summary }}</p>
+            <div class="article-footer">
+                <span class="article-read-time">&#128337; {{ article.read_time }} read</span>
+                <div class="article-tags">
+                    {% for tag in article.tags %}
+                    <span class="article-tag">#{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="learn-empty" id="learn-empty" style="display:none;">
+        <p>No articles in this category yet — check back soon!</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const filters = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.article-card');
+    const emptyState = document.getElementById('learn-empty');
+
+    filters.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            filters.forEach(function (b) { b.classList.remove('filter-btn-active'); });
+            btn.classList.add('filter-btn-active');
+
+            var selected = btn.dataset.category;
+            var visible = 0;
+
+            cards.forEach(function (card) {
+                if (selected === 'All' || card.dataset.category === selected) {
+                    card.style.display = '';
+                    visible++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            emptyState.style.display = visible === 0 ? 'block' : 'none';
+        });
+    });
+})();
+</script>
+{% endblock %}
