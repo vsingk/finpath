@@ -431,6 +431,57 @@ a:hover {
     margin-bottom: 6px;
     font-size: 0.9rem;
 }
+.toggleButtons{
+    display: flex;
+    gap: 5px;
+    
+
+}
+.toggleSavingsGoal{
+    background-color: var(--primary-dark);
+    color:white;
+}
+.toggleSavingsGoal, .toggleMonthly{
+    padding: 10px 13px;
+    border: 1px solid var(--border);
+    font-size: .8rem;
+    font-weight: 500;
+    border-radius: 5px;
+    
+}
+.toggleSavingsGoal:hover, .toggleMonthly:hover{
+    cursor:pointer;
+    
+}
+
+.SavingsGoal, .MonthlyAmount{
+    display: flex;
+    
+}
+.SavingsGoal input, .MonthlyAmount input{
+    width: 250px;
+    padding: 10px 13px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 500;
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    background: var(--bg);
+    color: var(--text);
+    
+}
+
+.chart-full {
+    color: var(--text-mid);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+.Amount{
+    color: var(--primary-dark);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
 
 .form-input {
     width: 100%;
