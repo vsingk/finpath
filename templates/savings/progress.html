@@ -52,22 +52,46 @@
     
                 <div class="form-group" style="width:100%; ">
                     <h3>Set a Savings Goal</h3>
-                    <label for="savingsGoal">Enter Goal Savings</label>
-                    <input type="text" id="savingsGoal" placeholder="$">
-               
-                     
-                    <label for="savingsGoalDate">Enter Target Date</label>
-                    <input type="month" id="goalDate">
-              
-                    <label for="interestRate">Enter Interest Rate (yearly)</label>
-                    <input type="text" id="interestRate" placeholder="%">
-                    <h4 id="result">Result: </h4>
+                    <div class="toggleButtons">
+                        <button class="toggleSavingsGoal">Savings Goal</button>
+                        <button class="toggleMonthly">Monthly Deposit</button>
+                    </div>
+                    <div class="SavingsGoal" style="display: block;">
+                        <label for="savingsGoal">Enter Goal Savings</label>
+                        <input type="text" id="savingsGoal" placeholder="$">
+                
+                        
+                        <label for="savingsGoalDate">Enter Target Date</label>
+                        <input type="month" id="goalDate">
+                
+                        <label for="interestRate">Enter Interest Rate (yearly)</label>
+                        <input type="text" id="interestRate" placeholder="%">
+                        <h4 id="result">Result: </h4>
+                        <button type="button" class="btn btn-primary" id="submitSavingsGoal">Submit</button>
+                    </div>
+
+                    <div class="MonthlyAmount" style="display: none;">
+                        <label for="savingsAmount">Enter Monthly Deposit</label>
+                        <input type="text" id="savingsAmount" placeholder="$">
+                    
+                            
+                        <label for="goalAmount">Enter Target Amount</label>
+                        <input type="text" id="goalAmount">
+                    
+                        <label for="interestRate2">Enter Interest Rate (yearly)</label>
+                        <input type="text" id="interestRate2" placeholder="%">
+                        <h4 id="result2">Result: </h4>
+                        <button type="button" class="btn btn-primary" id="submitDepositGoal">Submit</button>
+                    </div>
                 </div>
-                <div class="chart-card" style="display: none; width: 100%; height: 100%; background-color: none;">
+                <div class="chart-card" id="chart-card-savings" style="display: none; width: 100%; height: 100%; background-color: none;">
                     <canvas id="savingsGoalChart" style="height: 100%; width: 100%;"></canvas>
                 </div>
+                <div class="chart-card" id="chart-card-monthly" style="display: none; width: 100%; height: 100%; background-color: none; ">
+                    <canvas id="projectedChart" style="height: 100%; width: 100%;"></canvas>
+                </div>
             </div>
-            <button type="button" class="btn btn-primary" id="submitSavingsGoal">Submit</button>
+            
             
            
 
@@ -75,27 +99,7 @@
        
         </div>
     </div>
-    <div class="form-card savings-form-card">
-        <div class="savings-form-row" style="width: 100%; display: flex; flex-direction: row; background-color: none;">
-            <div class="form-group">
-                <h3>Projection Based on Monthly Deposit</h3>
-                <label for="savingsAmount">Enter Monthly Deposit</label>
-                <input type="text" id="savingsAmount" placeholder="$">
-            
-                    
-                <label for="goalAmount">Enter Target Amount</label>
-                <input type="text" id="goalAmount">
-            
-                <label for="interestRate2">Enter Interest Rate (yearly)</label>
-                <input type="text" id="interestRate2" placeholder="%">
-                <h4 id="result2">Result: </h4>
-            </div>
-            <div class="chart-card" id="chart-card-monthly" style="display: none; width: auto; height: auto; background-color: none; ">
-                <canvas id="projectedChart" style="height: 100%; width: 100%;"></canvas>
-            </div>
-        </div>
-        <button type="button" class="btn btn-primary" id="submitDepositGoal">Submit</button>
-    </div>
+  
 
      
             
@@ -110,23 +114,21 @@
     </div>
 
     <div class="dashboard-section">
-        <h3>Savings Projections</h3>
-        <div class="chart-card">
-            <div class="projection-controls">
-                <button class="btn btn-sm btn-outline projection-btn active" data-years="1">1 Year</button>
-                <button class="btn btn-sm btn-outline projection-btn" data-years="3">3 Years</button>
-                <button class="btn btn-sm btn-outline projection-btn" data-years="5">5 Years</button>
-            </div>
-            <canvas id="projectionChart"></canvas>
-            {% if not recent_entries %}
-            <p class="chart-empty">Add savings entries to generate projections.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="dashboard-section">
         <h3>Recent Entries</h3>
         {% if recent_entries %}
+        <div class="chart-card">
+            <canvas style="showLine: true," id="savingsHistoryChart"></canvas>
+
+            {% if not recent_entries %}
+                <p class="chart-empty">Add savings entries to generate projections.</p>
+            {% else %}
+                <div style="display: flex; flex-direction: row;">
+                    <p class="chart-full">Total amount saved:</p>
+                    <p class="Amount"> ${{ total_saved|floatformat:2 }}</p>
+                </div>
+                
+            {% endif %}
+        </div>
         <div class="entries-table-wrapper">
             <table class="entries-table">
                 <thead>
@@ -167,6 +169,70 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+  // --- Savings History chart data from Django template ---
+  const historyEntryLabels = [
+    {% for entry in recent_entries %}
+      "{{ entry.date|date:'Y-m-d' }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  const historyEntryAmounts = [
+    {% for entry in recent_entries %}
+      {{ entry.amount }}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  // --- Render Savings History chart (one point per entry) ---
+  if (historyEntryLabels.length > 0) {
+    const ctxHistory = document.getElementById('savingsHistoryChart').getContext('2d');
+
+    new Chart(ctxHistory, {
+      type: 'line',
+      data: {
+        labels: historyEntryLabels,
+        datasets: [{
+          label: 'Savings Entries ($)',
+          data: historyEntryAmounts,
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22, 163, 74, 0.12)',
+          fill: false,
+
+          // show points clearly:
+          pointRadius: 5,
+          pointHoverRadius: 7,
+
+          // IMPORTANT: line hidden so it looks like "points per entry"
+          showLine: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return '$' + Number(ctx.parsed.y).toLocaleString(undefined, { minimumFractionDigits: 2 });
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { maxTicksLimit: 10 }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { callback: (val) => '$' + Number(val).toLocaleString() }
+          }
+        }
+      }
+    });
+  }
+</script>
 <script>
     const historicalLabels = {{ historical_labels_json|safe }};
     const historicalData = {{ historical_data_json|safe }};
