@@ -1503,3 +1503,64 @@ select.form-input {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== Celebration Styles ===== */
+.alert-celebration {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+    border: 2px solid #f59e0b;
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-align: center;
+    padding: 20px;
+    animation: celebration-pulse 0.5s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-celebration::before {
+    content: '🎉';
+    position: absolute;
+    font-size: 3rem;
+    animation: confetti-left 1s ease-out;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.alert-celebration::after {
+    content: '🎉';
+    position: absolute;
+    font-size: 3rem;
+    animation: confetti-right 1s ease-out;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@keyframes celebration-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes confetti-left {
+    0% {
+        transform: translateY(-50%) translateX(-100px) rotate(0deg);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(-50%) translateX(0) rotate(360deg);
+        opacity: 1;
+    }
+}
+
+@keyframes confetti-right {
+    0% {
+        transform: translateY(-50%) translateX(100px) rotate(0deg);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(-50%) translateX(0) rotate(-360deg);
+        opacity: 1;
+    }
+}
