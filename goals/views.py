@@ -21,12 +21,10 @@ def goals_overview(request):
     total_target = goals.aggregate(total=Sum('target_amount'))['total'] or Decimal('0.00')
     total_saved = goals.aggregate(total=Sum('current_amount'))['total'] or Decimal('0.00')
     total_monthly = goals.aggregate(total=Sum('monthly_contribution'))['total'] or Decimal('0.00')
-
     overall_progress = round((total_saved / total_target * 100), 1) if total_target > 0 else 0
     
     retirement_goals = goals.filter(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
     purchase_goals = goals.exclude(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
-
     recent_contributions = GoalContribution.objects.filter(
         goal__user=request.user
     )[:10]
@@ -100,7 +98,6 @@ def delete_goal(request, pk):
 def goal_detail(request, pk):
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     contributions = goal.contributions.all()
-    
     if request.method == 'POST':
         form = GoalContributionForm(request.POST)
         if form.is_valid():
@@ -136,7 +133,6 @@ def goal_detail(request, pk):
     else:
         form = GoalContributionForm(initial={'goal': goal, 'date': timezone.now().date()})
         form.fields['goal'].widget = forms.HiddenInput()
-
     chart_data = _build_goal_progress_chart(contributions, goal.target_amount)
     
     context = {
@@ -170,13 +166,11 @@ def allocate_budget(request):
     
     today = timezone.now().date()
     current_month = today.replace(day=1)
-
     budget = Budget.objects.filter(user=request.user, month=current_month).first()
     
     if not budget:
         messages.warning(request, 'Please create a budget for this month first.')
         return redirect('budget_setup')
-
     expenses = Expense.objects.filter(user=request.user, category__budget=budget)
     total_spent = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     remaining = budget.total_income - total_spent
@@ -184,7 +178,7 @@ def allocate_budget(request):
     if remaining <= 0:
         messages.info(request, 'No remaining budget to allocate this month.')
         return redirect('goals_overview')
-
+    
     allocation, created = MonthlyAllocation.objects.get_or_create(
         user=request.user,
         month=current_month,

@@ -55,7 +55,6 @@ class SavingsGoal(models.Model):
         return max(self.target_amount - self.current_amount, Decimal('0.00'))
 
     def months_to_goal(self):
-        """Calculate months needed to reach goal at current contribution rate"""
         if self.monthly_contribution <= 0:
             return None
         remaining = self.remaining_amount()
@@ -64,11 +63,9 @@ class SavingsGoal(models.Model):
         return int((remaining / self.monthly_contribution)) + 1
 
     def is_retirement_account(self):
-        """Check if this is a retirement account with annual limits"""
         return self.goal_type in ['401k', 'roth_ira', 'traditional_ira']
 
     def get_annual_limit(self):
-        """Get IRS annual contribution limits for retirement accounts"""
         limits = {
             '401k': 23000,
             'roth_ira': 7000,
@@ -93,7 +90,6 @@ class GoalContribution(models.Model):
 
 
 class MonthlyAllocation(models.Model):
-    """Track how remaining budget is allocated to goals each month"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='monthly_allocations')
     month = models.DateField(help_text='First day of the allocation month')
     remaining_budget = models.DecimalField(max_digits=12, decimal_places=2, 
@@ -110,22 +106,18 @@ class MonthlyAllocation(models.Model):
         return f"{self.user.username} - {self.month.strftime('%B %Y')} - ${self.remaining_budget}"
 
     def get_allocations(self):
-        """Get all goal allocations for this month"""
         return self.goal_allocations.all()
 
     def total_allocated(self):
-        """Sum of all allocations to goals"""
         return self.goal_allocations.aggregate(
             total=models.Sum('amount')
         )['total'] or Decimal('0.00')
 
     def unallocated_amount(self):
-        """Amount not yet allocated to any goal"""
         return self.remaining_budget - self.total_allocated()
 
 
 class GoalAllocation(models.Model):
-    """Individual allocation from monthly budget to a specific goal"""
     monthly_allocation = models.ForeignKey(MonthlyAllocation, on_delete=models.CASCADE, 
                                           related_name='goal_allocations')
     goal = models.ForeignKey(SavingsGoal, on_delete=models.CASCADE, related_name='allocations')

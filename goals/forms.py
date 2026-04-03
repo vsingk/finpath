@@ -122,7 +122,6 @@ class GoalAllocationForm(forms.ModelForm):
 
 
 class BulkAllocationForm(forms.Form):
-    """Form for allocating remaining budget across multiple goals at once"""
     def __init__(self, *args, goals=None, remaining_budget=None, **kwargs):
         super().__init__(*args, **kwargs)
         
