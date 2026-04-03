@@ -1,7 +1,12 @@
+
+function isDecimal(value){
+    return /^-?(?:\d+|\d*\.\d+)$/.test(value);
+}
 document.addEventListener('DOMContentLoaded', function(){
     const submitButton = document.getElementById('submitSavingsGoal');
     let chart = null;
     let chart2 = null;
+
     submitButton.addEventListener('click', function(e){
         e.preventDefault();
         const savingsGoal = document.getElementById('savingsGoal').value;
@@ -12,14 +17,25 @@ document.addEventListener('DOMContentLoaded', function(){
         // console.log('Interest Rate:', interestRate);
         if (savingsGoal === ""){
             alert("Please enter an Savings Goal.");
+            return;
         }
         if (goalDate === ""){
             alert("Please enter a target date.");
+            return;
         }
         if (interestRate === ""){
             alert("Please enter an interest rate.");
+            return;
         }
-        
+        console.log("passed initial tests")
+        if (!isDecimal(savingsGoal)){
+            alert("Please enter a valid number for Savings Goal.");3
+            return;
+        }
+        if (!isDecimal(interestRate)){
+            alert("Please enter only decimal for Interest Rate.")
+            return;
+        }
         submitButton.disabled = true;
         submitButton.textContent = 'Loading...';
         fetch(`/budgets/projected-budget/${savingsGoal}/${interestRate}/${goalDate}/`)
@@ -119,21 +135,36 @@ document.addEventListener('DOMContentLoaded', function(){
         // console.log('Interest Rate:', interestRate);
         if (interestRate === ""){
             alert("Please enter an interest rate.");
+            return;
         }
         if (monthlyDeposit === ""){
             alert("Please enter a monthly deposit amount.");
+            return;
         }
         if (goalAmount === ""){
             alert("Please enter a goal amount.")
+            return;
         }    
         if(isNaN(monthlyDeposit)){
             alert("Please enter a valid number for Monthly Deposit.");
+            return;
         }
         if(isNaN(goalAmount)){
             alert("Please enter a valid number for Goal.");
+            return;
         }
         if(isNaN(interestRate)){
             alert("Please enter a valid number for Interest Rate.");
+            return;
+        }
+        console.log("passed initial tests")
+        if (!isDecimal(monthlyDeposit)){
+            alert("Please enter a valid number for Monthly Deposit.");3
+            return;
+        }
+        if (!isDecimal(interestRate)){
+            alert("Please enter only decimal for Interest Rate.")
+            return;
         }
         submitMonthlyButton.disabled = true;
         submitMonthlyButton.textContent = 'Loading...';
