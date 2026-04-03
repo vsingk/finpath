@@ -33,7 +33,7 @@ def goals_overview(request):
     purchase_goals = goals.exclude(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
     recent_contributions = GoalContribution.objects.filter(
         goal__user=request.user
-    )[:10]
+    ).select_related('goal')[:10]
 
     today = timezone.now().date()
     current_month = today.replace(day=1)
@@ -196,7 +196,8 @@ def allocate_budget(request):
         allocation.save()
     
     goals = SavingsGoal.objects.filter(user=request.user, is_active=True)
-    
+    goals_dict = {g.id: g for g in goals}
+
     already_allocated_goal_ids = set(
         allocation.goal_allocations.values_list('goal_id', flat=True)
     )
@@ -217,7 +218,7 @@ def allocate_budget(request):
                     goal_id = int(field_name.split('_')[1])
                     
                     if goal_id in already_allocated_goal_ids:
-                        goal = goals.get(id=goal_id)
+                        goal = goals_dict[goal_id]
                         errors.append(
                             f'"{goal.name}" already has an allocation for {current_month.strftime("%B %Y")}. '
                             f'Delete the existing allocation first if you want to change it.'
