@@ -6,4 +6,5 @@ class GoalsConfig(AppConfig):
     name = 'goals'
     
     def ready(self):
-        import goals.signals  
+        """Import signals when app is ready"""
+        import goals.signals  # noqa

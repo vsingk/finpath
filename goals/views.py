@@ -21,12 +21,12 @@ def goals_overview(request):
     total_target = goals.aggregate(total=Sum('target_amount'))['total'] or Decimal('0.00')
     total_saved = goals.aggregate(total=Sum('current_amount'))['total'] or Decimal('0.00')
     total_monthly = goals.aggregate(total=Sum('monthly_contribution'))['total'] or Decimal('0.00')
-    
+
     overall_progress = round((total_saved / total_target * 100), 1) if total_target > 0 else 0
     
     retirement_goals = goals.filter(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
     purchase_goals = goals.exclude(goal_type__in=['401k', 'roth_ira', 'traditional_ira'])
-    
+
     recent_contributions = GoalContribution.objects.filter(
         goal__user=request.user
     )[:10]
@@ -100,20 +100,43 @@ def delete_goal(request, pk):
 def goal_detail(request, pk):
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     contributions = goal.contributions.all()
-
+    
     if request.method == 'POST':
         form = GoalContributionForm(request.POST)
         if form.is_valid():
             contribution = form.save(commit=False)
+            
+            new_total = goal.current_amount + contribution.amount
+            if new_total > goal.target_amount:
+                overage = new_total - goal.target_amount
+                max_allowed = goal.target_amount - goal.current_amount
+                messages.error(
+                    request,
+                    f'Contribution of ${contribution.amount} would exceed your goal target! '
+                    f'Current: ${goal.current_amount}, Target: ${goal.target_amount}. '
+                    f'Maximum you can add: ${max_allowed}.'
+                )
+                return redirect('goal_detail', pk=goal.pk)
+
+            old_amount = goal.current_amount
             goal.current_amount += contribution.amount
             goal.save()
             contribution.save()
-            messages.success(request, f'Added ${contribution.amount} to {goal.name}!')
+            
+            if old_amount < goal.target_amount and goal.current_amount >= goal.target_amount:
+                messages.success(
+                    request,
+                    f'🎉 Congratulations! You\'ve reached 100% of your "{goal.name}" goal! 🎉',
+                    extra_tags='celebration'
+                )
+            else:
+                messages.success(request, f'Added ${contribution.amount} to {goal.name}!')
+            
             return redirect('goal_detail', pk=goal.pk)
     else:
         form = GoalContributionForm(initial={'goal': goal, 'date': timezone.now().date()})
         form.fields['goal'].widget = forms.HiddenInput()
-    
+
     chart_data = _build_goal_progress_chart(contributions, goal.target_amount)
     
     context = {
@@ -147,13 +170,13 @@ def allocate_budget(request):
     
     today = timezone.now().date()
     current_month = today.replace(day=1)
-    
+
     budget = Budget.objects.filter(user=request.user, month=current_month).first()
     
     if not budget:
         messages.warning(request, 'Please create a budget for this month first.')
         return redirect('budget_setup')
-    
+
     expenses = Expense.objects.filter(user=request.user, category__budget=budget)
     total_spent = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     remaining = budget.total_income - total_spent
@@ -161,7 +184,7 @@ def allocate_budget(request):
     if remaining <= 0:
         messages.info(request, 'No remaining budget to allocate this month.')
         return redirect('goals_overview')
-    
+
     allocation, created = MonthlyAllocation.objects.get_or_create(
         user=request.user,
         month=current_month,
@@ -171,7 +194,7 @@ def allocate_budget(request):
     if not created and allocation.remaining_budget != remaining:
         allocation.remaining_budget = remaining
         allocation.save()
-
+    
     goals = SavingsGoal.objects.filter(user=request.user, is_active=True)
     
     already_allocated_goal_ids = set(
@@ -187,15 +210,32 @@ def allocate_budget(request):
         
         if form.is_valid():
             errors = []
+            goals_to_allocate = []
+            
             for field_name, amount in form.cleaned_data.items():
                 if field_name.startswith('goal_') and amount and amount > 0:
                     goal_id = int(field_name.split('_')[1])
+                    
                     if goal_id in already_allocated_goal_ids:
                         goal = goals.get(id=goal_id)
                         errors.append(
                             f'"{goal.name}" already has an allocation for {current_month.strftime("%B %Y")}. '
                             f'Delete the existing allocation first if you want to change it.'
                         )
+                    else:
+                        goal = goals.get(id=goal_id)
+
+                        new_total = goal.current_amount + amount
+                        if new_total > goal.target_amount:
+                            overage = new_total - goal.target_amount
+                            max_allowed = goal.target_amount - goal.current_amount
+                            errors.append(
+                                f'"{goal.name}": Allocation of ${amount} would exceed target! '
+                                f'Current: ${goal.current_amount}, Target: ${goal.target_amount}. '
+                                f'Maximum you can allocate: ${max_allowed}.'
+                            )
+                        else:
+                            goals_to_allocate.append((goal_id, goal, amount))
             
             if errors:
                 for error in errors:
@@ -210,15 +250,13 @@ def allocate_budget(request):
                     'already_allocated_goal_ids': already_allocated_goal_ids,
                 }
                 return render(request, 'goals/allocate.html', context)
-            
+
             total_allocated = Decimal('0')
             contributions_created = 0
             categories_created = []
+            completed_goals = []  
             
-            for field_name, amount in form.cleaned_data.items():
-                if field_name.startswith('goal_') and amount and amount > 0:
-                    goal_id = int(field_name.split('_')[1])
-                    goal = goals.get(id=goal_id)
+            for goal_id, goal, amount in goals_to_allocate:
                     
                     category_name = _get_category_name_for_goal_type(goal.goal_type)
                     
@@ -252,8 +290,12 @@ def allocate_budget(request):
                         note=f'Monthly allocation for {current_month.strftime("%B %Y")}'
                     )
                     
+                    old_amount = goal.current_amount
                     goal.current_amount += amount
                     goal.save()
+                    
+                    if old_amount < goal.target_amount and goal.current_amount >= goal.target_amount:
+                        completed_goals.append(goal.name)
                     
                     total_allocated += amount
                     contributions_created += 1
@@ -263,6 +305,15 @@ def allocate_budget(request):
                 success_msg += f' Created budget categories: {", ".join(categories_created)}.'
             
             messages.success(request, success_msg)
+            
+            if completed_goals:
+                for goal_name in completed_goals:
+                    messages.success(
+                        request,
+                        f'🎉 Congratulations! You\'ve reached 100% of your "{goal_name}" goal! 🎉',
+                        extra_tags='celebration'
+                    )
+            
             return redirect('goals_overview')
     else:
         form = BulkAllocationForm(goals=goals, remaining_budget=remaining)
@@ -291,17 +342,21 @@ def allocation_history(request):
 
 def _get_category_name_for_goal_type(goal_type):
     category_mapping = {
+        # Retirement accounts
         '401k': '401(k) Contributions',
         'roth_ira': 'Roth IRA',
         'traditional_ira': 'Traditional IRA',
         
+        # Emergency & savings
         'emergency': 'Emergency Fund',
         'custom': 'Savings Goals',
         
+        # Major purchases
         'house': 'House Down Payment',
         'car': 'Car Purchase',
         'purchase': 'Major Purchases',
         
+        # Specific goals
         'vacation': 'Vacation/Travel',
         'education': 'Education',
         'debt': 'Debt Payoff',
