@@ -172,13 +172,13 @@
 <script>
   // --- Savings History chart data from Django template ---
   const historyEntryLabels = [
-    {% for entry in recent_entries %}
+    {% for entry in recent_entries reversed %}
       "{{ entry.date|date:'Y-m-d' }}"{% if not forloop.last %},{% endif %}
     {% endfor %}
   ];
 
   const historyEntryAmounts = [
-    {% for entry in recent_entries %}
+    {% for entry in recent_entries reversed %}
       {{ entry.amount }}{% if not forloop.last %},{% endif %}
     {% endfor %}
   ];
