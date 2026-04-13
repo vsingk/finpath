@@ -27,7 +27,7 @@
     </div>
 
     <div class="dashboard-section">
-        <div class="form-card savings-form-card">
+        <div class="form-card savings-form-card" id="log-entry-form">
             <h3>Log a Savings Entry</h3>
             <form method="post" novalidate>
                 {% csrf_token %}
@@ -46,55 +46,127 @@
             </form>
         </div>
     </div>
-    <div class="dashboard-section" >
-        <div class="form-card savings-form-card" style=" width: 100%;" >
-            <div class="savings-form-row" style="width: 100%; display: flex; flex-direction: row; background-color: none;" >
-    
-                <div class="form-group" style="width:100%; ">
-                    <h3>Set a Savings Goal</h3>
-                    <label for="savingsGoal">Enter Goal Savings</label>
-                    <input type="text" id="savingsGoal" placeholder="$">
-               
-                     
-                    <label for="savingsGoalDate">Enter Target Date</label>
-                    <input type="month" id="goalDate">
-              
-                    <label for="interestRate">Enter Interest Rate (yearly)</label>
-                    <input type="text" id="interestRate" placeholder="%">
-                    <h4 id="result">Result: </h4>
-                </div>
-                <div class="chart-card" style="display: none; width: 100%; height: 100%; background-color: none;">
-                    <canvas id="savingsGoalChart" style="height: 100%; width: 100%;"></canvas>
+    <div class="dashboard-section">
+        <div class="form-card savings-form-card">
+            <div class="calc-header">
+                <div>
+                    <h3>Savings Calculator</h3>
+                    <p class="calc-desc">Enter a target amount and date — find out how much to save each month to get there.</p>
                 </div>
             </div>
-            <button type="button" class="btn btn-primary" id="submitSavingsGoal">Submit</button>
-            
-           
+
+            <div class="form-group">
+                <label for="calc1-account-type">Account Type</label>
+                <select id="calc1-account-type" class="form-input">
+                    <option value="general">General Savings</option>
+                    <option value="401k">401(k)</option>
+                    <option value="roth_ira">Roth IRA</option>
+                    <option value="traditional_ira">Traditional IRA</option>
+                </select>
+            </div>
+
+            <div id="calc1-account-banner" class="account-info-banner" style="display:none;"></div>
+
+            <div class="savings-form-row">
+                <div class="form-group">
+                    <label for="savingsGoal">Target Amount ($)</label>
+                    <input type="text" id="savingsGoal" class="form-input" placeholder="e.g. 7000">
+                </div>
+                <div class="form-group">
+                    <label for="goalDate">Target Date</label>
+                    <input type="month" id="goalDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="interestRate">Annual Interest Rate (%)</label>
+                    <input type="text" id="interestRate" class="form-input" placeholder="e.g. 7">
+                </div>
+            </div>
+
+            <div class="savings-form-row calc-match-row" id="calc1-match-row" style="display:none;">
+                <div class="form-group">
+                    <label for="calc1-match-rate">Employer Match (%)</label>
+                    <input type="number" id="calc1-match-rate" class="form-input" placeholder="e.g. 50" min="0" max="300">
+                </div>
+                <div class="form-group">
+                    <label for="calc1-match-cap">Match Cap ($/month)</label>
+                    <input type="number" id="calc1-match-cap" class="form-input" placeholder="e.g. 500" min="0">
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="submitSavingsGoal">Calculate</button>
+
+            <div id="calc1-result-section" style="display:none;">
+                <div id="calc1-result" class="calc-result"></div>
+                <div id="calc1-limit-warning" class="calc-warning" style="display:none;"></div>
+                <a href="{% url 'create_goal' %}" class="calc-bridge-cta">Turn this into a tracked goal &#8594;</a>
+            </div>
 
         </div>
-       
+        <div class="chart-card" id="calc1-chart-card" style="display:none; margin-top:16px;">
+            <canvas id="savingsGoalChart"></canvas>
+        </div>
         </div>
     </div>
-    <div class="form-card savings-form-card">
-        <div class="savings-form-row" style="width: 100%; display: flex; flex-direction: row; background-color: none;">
+
+    <div class="dashboard-section">
+        <div class="form-card savings-form-card">
+            <div class="calc-header">
+                <div>
+                    <h3>Deposit Planner</h3>
+                    <p class="calc-desc">Enter a fixed monthly deposit — find out when you'll reach your target.</p>
+                </div>
+            </div>
+
             <div class="form-group">
-                <h3>Projection Based on Monthly Deposit</h3>
-                <label for="savingsAmount">Enter Monthly Deposit</label>
-                <input type="text" id="savingsAmount" placeholder="$">
-            
-                    
-                <label for="goalAmount">Enter Target Amount</label>
-                <input type="text" id="goalAmount">
-            
-                <label for="interestRate2">Enter Interest Rate (yearly)</label>
-                <input type="text" id="interestRate2" placeholder="%">
-                <h4 id="result2">Result: </h4>
+                <label for="calc2-account-type">Account Type</label>
+                <select id="calc2-account-type" class="form-input">
+                    <option value="general">General Savings</option>
+                    <option value="401k">401(k)</option>
+                    <option value="roth_ira">Roth IRA</option>
+                    <option value="traditional_ira">Traditional IRA</option>
+                </select>
             </div>
-            <div class="chart-card" id="chart-card-monthly" style="display: none; width: auto; height: auto; background-color: none; ">
-                <canvas id="projectedChart" style="height: 100%; width: 100%;"></canvas>
+
+            <div id="calc2-account-banner" class="account-info-banner" style="display:none;"></div>
+
+            <div class="savings-form-row">
+                <div class="form-group">
+                    <label for="savingsAmount">Monthly Deposit ($)</label>
+                    <input type="text" id="savingsAmount" class="form-input" placeholder="e.g. 500">
+                </div>
+                <div class="form-group">
+                    <label for="goalAmount">Target Amount ($)</label>
+                    <input type="text" id="goalAmount" class="form-input" placeholder="e.g. 7000">
+                </div>
+                <div class="form-group">
+                    <label for="interestRate2">Annual Interest Rate (%)</label>
+                    <input type="text" id="interestRate2" class="form-input" placeholder="e.g. 7">
+                </div>
             </div>
+
+            <div class="savings-form-row calc-match-row" id="calc2-match-row" style="display:none;">
+                <div class="form-group">
+                    <label for="calc2-match-rate">Employer Match (%)</label>
+                    <input type="number" id="calc2-match-rate" class="form-input" placeholder="e.g. 50" min="0" max="300">
+                </div>
+                <div class="form-group">
+                    <label for="calc2-match-cap">Match Cap ($/month)</label>
+                    <input type="number" id="calc2-match-cap" class="form-input" placeholder="e.g. 500" min="0">
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="submitDepositGoal">Calculate</button>
+
+            <div id="calc2-result-section" style="display:none;">
+                <div id="calc2-result" class="calc-result"></div>
+                <div id="calc2-limit-warning" class="calc-warning" style="display:none;"></div>
+                <a href="{% url 'create_goal' %}" class="calc-bridge-cta">Turn this into a tracked goal &#8594;</a>
+            </div>
+
         </div>
-        <button type="button" class="btn btn-primary" id="submitDepositGoal">Submit</button>
+        <div class="chart-card" id="calc2-chart-card" style="display:none; margin-top:16px;">
+            <canvas id="projectedChart"></canvas>
+        </div>
     </div>
 
      
@@ -143,7 +215,8 @@
                         <td>{{ entry.date|date:"M d, Y" }}</td>
                         <td class="entry-amount">${{ entry.amount|floatformat:2 }}</td>
                         <td class="entry-note">{{ entry.note|default:"--" }}</td>
-                        <td>
+                        <td class="entry-actions">
+                            <a href="{% url 'savings_edit' entry.pk %}" class="btn-edit" title="Edit entry">&#9998;</a>
                             <form method="post" action="{% url 'savings_delete' entry.pk %}" class="delete-form">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-delete" title="Delete entry" onclick="return confirm('Delete this entry?')">
@@ -157,8 +230,11 @@
             </table>
         </div>
         {% else %}
-        <div class="card" style="text-align:center; padding: 40px;">
-            <p>No savings entries yet. Use the form above to log your first one!</p>
+        <div class="empty-state">
+            <div class="empty-state-icon">&#128176;</div>
+            <h4>No savings entries yet</h4>
+            <p>Start tracking what you save — even small amounts add up over time.</p>
+            <a href="#log-entry-form" class="btn btn-primary btn-sm">Log Your First Entry</a>
         </div>
         {% endif %}
     </div>

@@ -4,8 +4,19 @@
 {% block content %}
 <div class="container">
     <div class="budget-header">
-        <h2>Budget Tracking</h2>
-        <p>{{ current_month|date:"F Y" }} — manage your spending and stay on track.</p>
+        <div class="budget-header-top">
+            <h2>Budget Tracking</h2>
+            <div class="month-nav">
+                <a href="?month={{ prev_month_str }}" class="month-nav-btn" aria-label="Previous month">&#8249;</a>
+                <span class="month-nav-label">{{ current_month|date:"F Y" }}</span>
+                {% if not is_current_month %}
+                <a href="?month={{ next_month_str }}" class="month-nav-btn" aria-label="Next month">&#8250;</a>
+                {% else %}
+                <span class="month-nav-btn month-nav-disabled" aria-disabled="true">&#8250;</span>
+                {% endif %}
+            </div>
+        </div>
+        <p>Manage your spending and stay on track.</p>
     </div>
 
     {% if not has_budget %}
@@ -83,6 +94,7 @@
             <h3>Log an Expense</h3>
             <form method="post" novalidate>
                 {% csrf_token %}
+                <input type="hidden" name="_month" value="{{ month_str }}">
                 <div class="budget-form-row">
                     {% for field in form %}
                     <div class="form-group">

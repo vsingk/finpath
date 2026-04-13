@@ -3,6 +3,7 @@
 
 {% block content %}
 <div class="container">
+    <a href="{% url 'goals_overview' %}" class="back-link">&#8592; Back to Goals</a>
     <div class="savings-header">
         <h2>Allocate Remaining Budget</h2>
         <p>{{ current_month|date:"F Y" }} — Divide your remaining budget across savings goals.</p>

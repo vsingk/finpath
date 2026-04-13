@@ -1,5 +1,5 @@
 import json
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import math
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -12,69 +12,86 @@ from .models import Budget, BudgetCategory, Expense, DEFAULT_CATEGORIES
 from .forms import BudgetForm, BudgetCategoryFormSet, ExpenseForm
 from django.http import JsonResponse, HttpResponse
 from datetime import date
+from django.urls import reverse
 @login_required
 def projected_Budget(request, n, i, a):
-    #print(a)
-    targetDate = parse_date(a)
-    today = timezone.now().month
-    savingsGoal = Decimal(n)
-    
-    year, month = map(int, a.split("-"))
-    target_date = date(year, month, 1)
+    try:
+        savingsGoal = Decimal(n)
+        year, month = map(int, a.split("-"))
+        target_date = date(year, month, 1)
+    except (ValueError, InvalidOperation):
+        return JsonResponse({'error': 'Invalid input values.'}, status=400)
 
     today = timezone.localdate().replace(day=1)
 
-    if (target_date < today):
-        return JsonResponse({'error': 'Target date must be in the future.'}, status = 400)
-    
+    if target_date <= today:
+        return JsonResponse({'error': 'Target date must be in the future.'}, status=400)
+
     differenceInDays = (target_date - today).days
     difasMonths = math.ceil(differenceInDays / 30)
-    print("differeence in months: ", difasMonths)
 
-    interestRate = (Decimal(i) / Decimal(100)) / Decimal(12)
-    print("IR: ", interestRate)
-    print("goal savings: ", n)
-    denomenator = ((1+interestRate) ** difasMonths) - 1
-    division = interestRate / denomenator
-    proj = savingsGoal * division
+    try:
+        interestRate = (Decimal(i) / Decimal(100)) / Decimal(12)
+        if interestRate == 0:
+            proj = savingsGoal / Decimal(difasMonths)
+            denominator = Decimal(difasMonths)
+        else:
+            denominator = ((1 + interestRate) ** difasMonths) - 1
+            division = interestRate / denominator
+            proj = savingsGoal * division
+    except (InvalidOperation, ZeroDivisionError):
+        return JsonResponse({'error': 'Invalid interest rate.'}, status=400)
+
     labels = []
     monthlyRepresentation = []
-    for month in range(difasMonths):
-        labels.append(month + 1)
-        if month == 0:
-            monthlyRepresentation.append(round(Decimal(proj),2))
+    running = float(proj)
+    ir = float(interestRate)
+    for m in range(difasMonths):
+        labels.append(m + 1)
+        if m == 0:
+            monthlyRepresentation.append(round(running, 2))
         else:
-            lastMonth = monthlyRepresentation[month-1]
-            monthlyRepresentation.append(round((Decimal(lastMonth) * (1 + interestRate)) + Decimal(proj), 2))
-            
-        
-        
-    #print(labels )
-    #print(monthlyRepresentation)
-    return JsonResponse({'projected amount per month': math.ceil(proj), 'labels': labels, 'data':monthlyRepresentation})
+            running = monthlyRepresentation[m - 1] * (1 + ir) + float(proj)
+            monthlyRepresentation.append(round(running, 2))
+
+    return JsonResponse({'projected amount per month': math.ceil(float(proj)), 'labels': labels, 'data': monthlyRepresentation})
 
 @login_required
 def monthlyDepositProject(request, monthlyDeposit, goalAmount, interestRate):
-    print(interestRate, type(interestRate))
-    monthly = Decimal(monthlyDeposit)
-    goal = Decimal(goalAmount)
-    ir = ((Decimal(interestRate))/Decimal(100)) / Decimal(12)
-    print("monthly: ", monthly, "goal: ", goal, "IR: ", ir)
-    Axi = ((goal * ir) / monthly) + 1
-    b = math.log(Axi, 10)
-    c = math.log(1+ir, 10)
-    months = b/c
-    print("months: ", months)
+    try:
+        monthly = float(monthlyDeposit)
+        goal = float(goalAmount)
+        ir_annual = float(interestRate)
+    except (ValueError, InvalidOperation):
+        return JsonResponse({'error': 'Invalid input values.'}, status=400)
+
+    if monthly <= 0 or goal <= 0:
+        return JsonResponse({'error': 'Monthly deposit and goal must be positive.'}, status=400)
+
+    ir = (ir_annual / 100) / 12
+
+    try:
+        if ir == 0:
+            months = goal / monthly
+        else:
+            Axi = ((goal * ir) / monthly) + 1
+            if Axi <= 0:
+                return JsonResponse({'error': 'Goal is not reachable with these inputs.'}, status=400)
+            b = math.log(Axi, 10)
+            c = math.log(1 + ir, 10)
+            if c == 0:
+                return JsonResponse({'error': 'Invalid interest rate.'}, status=400)
+            months = b / c
+    except (ValueError, ZeroDivisionError):
+        return JsonResponse({'error': 'Invalid inputs for calculation.'}, status=400)
 
     labels = []
     monthlyProjection = []
-    for month in range(math.ceil(months)):
-        labels.append(month + 1)
-        if month == 0:
-            monthlyProjection.append(round(monthly,2))
-        else:
-            lastMonth = monthlyProjection[month-1]
-            monthlyProjection.append(round((Decimal(lastMonth) * (1 + ir) + Decimal(monthly)), 2))
+    running = 0.0
+    for m in range(math.ceil(months)):
+        labels.append(m + 1)
+        running = running * (1 + ir) + monthly
+        monthlyProjection.append(round(running, 2))
 
     return JsonResponse({'months': math.ceil(months), 'labels': labels, 'data': monthlyProjection})
 
@@ -83,14 +100,46 @@ def monthlyDepositProject(request, monthlyDeposit, goalAmount, interestRate):
 @login_required
 def budget_overview(request):
     today = timezone.now().date()
-    current_month = today.replace(day=1)
+    default_month = today.replace(day=1)
+
+    month_param = request.GET.get('month') or request.POST.get('_month')
+    current_month = default_month
+    if month_param:
+        try:
+            year, month_num = map(int, month_param.split('-'))
+            parsed = date(year, month_num, 1)
+            if parsed <= default_month:
+                current_month = parsed
+        except (ValueError, AttributeError):
+            pass
+
+    month_str = current_month.strftime('%Y-%m')
+    is_current_month = current_month == default_month
+
+    if current_month.month == 1:
+        prev_month = date(current_month.year - 1, 12, 1)
+    else:
+        prev_month = date(current_month.year, current_month.month - 1, 1)
+
+    if current_month.month == 12:
+        next_month = date(current_month.year + 1, 1, 1)
+    else:
+        next_month = date(current_month.year, current_month.month + 1, 1)
+
+    nav_context = {
+        'current_month': current_month,
+        'month_str': month_str,
+        'prev_month_str': prev_month.strftime('%Y-%m'),
+        'next_month_str': next_month.strftime('%Y-%m'),
+        'is_current_month': is_current_month,
+    }
 
     budget = Budget.objects.filter(user=request.user, month=current_month).first()
 
     if not budget:
         return render(request, 'budgets/overview.html', {
             'has_budget': False,
-            'current_month': current_month,
+            **nav_context,
         })
 
     categories = budget.categories.annotate(total_spent=Sum('expenses__amount'))
@@ -104,7 +153,10 @@ def budget_overview(request):
             expense.user = request.user
             expense.save()
             messages.success(request, f'Expense of ${expense.amount} added to {expense.category.name}!')
-            return redirect('budget_overview')
+            redirect_url = reverse('budget_overview')
+            if not is_current_month:
+                redirect_url += f'?month={month_str}'
+            return redirect(redirect_url)
     else:
         form = ExpenseForm()
         form.fields['category'].queryset = categories
@@ -122,7 +174,6 @@ def budget_overview(request):
     context = {
         'has_budget': True,
         'budget': budget,
-        'current_month': current_month,
         'form': form,
         'total_income': total_income,
         'monthly_income': monthly_income,
@@ -133,6 +184,7 @@ def budget_overview(request):
         'category_data': category_data,
         'sankey_json': json.dumps(sankey_data),
         'recent_expenses': recent_expenses,
+        **nav_context,
     }
     return render(request, 'budgets/overview.html', context)
 

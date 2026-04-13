@@ -1452,3 +1452,384 @@ select.form-input {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== Getting Started Checklist (R) ===== */
+.checklist-section {
+    background: var(--primary-muted);
+    border: 1px solid var(--primary-light);
+    border-radius: 12px;
+    padding: 24px 28px;
+}
+
+.checklist-intro {
+    color: var(--text-mid);
+    margin: 4px 0 16px;
+    font-size: 0.92rem;
+}
+
+.checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.checklist-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.checklist-item.checklist-done {
+    opacity: 0.6;
+    background: var(--bg);
+}
+
+.checklist-item.checklist-done .checklist-text strong {
+    text-decoration: line-through;
+}
+
+.checklist-icon {
+    font-size: 1.15rem;
+    width: 24px;
+    text-align: center;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.checklist-item.checklist-done .checklist-icon {
+    color: var(--primary);
+}
+
+.checklist-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.checklist-text strong {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.checklist-text span {
+    font-size: 0.82rem;
+    color: var(--text-light);
+}
+
+/* ===== Financial Snapshot (E) ===== */
+.snapshot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.snapshot-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.snapshot-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-light);
+    margin-bottom: 4px;
+}
+
+.snapshot-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.snapshot-of {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+.snapshot-sub {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+.snapshot-empty {
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 90px;
+    border-style: dashed;
+    border-color: var(--border-strong);
+    background: var(--bg);
+    transition: border-color 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+}
+
+.snapshot-empty:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.snapshot-empty-cta {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+    .snapshot-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Budget Month Navigation (G) ===== */
+.budget-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.month-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.month-nav-label {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-mid);
+    min-width: 110px;
+    text-align: center;
+}
+
+.month-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-mid);
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, color 0.18s;
+    user-select: none;
+}
+
+.month-nav-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-muted);
+    color: var(--primary);
+}
+
+.month-nav-btn.month-nav-disabled {
+    opacity: 0.35;
+    pointer-events: none;
+    cursor: default;
+}
+
+/* ===== Active nav link (B) ===== */
+.nav-links a.nav-active {
+    color: var(--primary);
+    font-weight: 700;
+    position: relative;
+}
+
+.nav-links a.nav-active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+/* ===== Empty states (C) ===== */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+}
+
+.empty-state h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 20px;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ===== Back link (D) ===== */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-mid);
+    text-decoration: none;
+    margin-bottom: 16px;
+    padding: 6px 0;
+    transition: color 0.15s;
+}
+
+.back-link:hover {
+    color: var(--primary);
+}
+
+/* ===== Edit entry button (N) ===== */
+.entry-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.btn-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 0.85rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-edit:hover {
+    background: var(--primary-muted);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ===== Savings Calculators ===== */
+.calc-header {
+    margin-bottom: 16px;
+}
+
+.calc-desc {
+    font-size: 0.88rem;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+.account-info-banner {
+    background: var(--primary-muted);
+    border: 1px solid var(--primary-light);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--text-mid);
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.account-banner-income {
+    font-size: 0.82rem;
+    color: var(--text-light);
+}
+
+.calc-match-row {
+    background: var(--bg);
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.calc-match-row .form-group {
+    margin-bottom: 0;
+}
+
+.calc-result {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    color: var(--text);
+    margin-top: 20px;
+    line-height: 1.6;
+}
+
+.calc-warning {
+    background: #fff8e6;
+    border: 1px solid #f59f00;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: #7d5a00;
+    margin-top: 10px;
+    line-height: 1.6;
+}
+
+.calc-bridge-cta {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+}
+
+.calc-bridge-cta:hover {
+    border-bottom-color: var(--primary);
+}
