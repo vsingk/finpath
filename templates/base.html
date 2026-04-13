@@ -13,12 +13,12 @@
             <a href="{% url 'home' %}" class="nav-brand">FinPath</a>
             <div class="nav-links">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'dashboard' %}">Dashboard</a>
-                    <a href="{% url 'savings_progress' %}">Savings</a>
-                    <a href="{% url 'budget_overview' %}">Budget</a>
-                    <a href="{% url 'goals_overview' %}">Goals</a>
-                    <a href="{% url 'learn' %}">Learn</a>
-                    <a href="{% url 'profile' %}">Profile</a>
+                    <a href="{% url 'dashboard' %}" {% if '/accounts/dashboard' in request.path %}class="nav-active"{% endif %}>Dashboard</a>
+                    <a href="{% url 'savings_progress' %}" {% if '/savings/' in request.path %}class="nav-active"{% endif %}>Savings</a>
+                    <a href="{% url 'budget_overview' %}" {% if '/budgets/' in request.path %}class="nav-active"{% endif %}>Budget</a>
+                    <a href="{% url 'goals_overview' %}" {% if '/goals/' in request.path %}class="nav-active"{% endif %}>Goals</a>
+                    <a href="{% url 'learn' %}" {% if '/learn' in request.path %}class="nav-active"{% endif %}>Learn</a>
+                    <a href="{% url 'profile' %}" {% if '/accounts/profile' in request.path %}class="nav-active"{% endif %}>Profile</a>
                     <a href="{% url 'logout' %}" class="btn btn-outline btn-sm">Log Out</a>
                 {% else %}
                     <a href="{% url 'login' %}">Log In</a>

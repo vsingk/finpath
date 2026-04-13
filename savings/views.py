@@ -58,6 +58,20 @@ def delete_entry(request, pk):
         messages.success(request, 'Entry deleted.')
     return redirect('savings_progress')
 
+
+@login_required
+def edit_entry(request, pk):
+    entry = get_object_or_404(SavingsEntry, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = SavingsEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Entry updated.')
+            return redirect('savings_progress')
+    else:
+        form = SavingsEntryForm(instance=entry)
+    return render(request, 'savings/edit_entry.html', {'form': form, 'entry': entry})
+
  
 def _calculate_average_monthly(entries, today, total=None):
     if not entries.exists():

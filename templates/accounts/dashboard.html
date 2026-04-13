@@ -26,6 +26,86 @@
         </div>
     </div>
 
+    {% if show_checklist %}
+    <div class="dashboard-section checklist-section">
+        <h3>Getting Started</h3>
+        <p class="checklist-intro">Complete these steps to get the most out of FinPath.</p>
+        <div class="checklist">
+            <a href="{% url 'profile' %}" class="checklist-item {% if profile_complete %}checklist-done{% endif %}">
+                <span class="checklist-icon">{% if profile_complete %}&#10003;{% else %}&#9675;{% endif %}</span>
+                <div class="checklist-text">
+                    <strong>Complete your profile</strong>
+                    <span>Add your income, occupation, and financial goals</span>
+                </div>
+            </a>
+            <a href="{% url 'budget_setup' %}" class="checklist-item {% if has_budget %}checklist-done{% endif %}">
+                <span class="checklist-icon">{% if has_budget %}&#10003;{% else %}&#9675;{% endif %}</span>
+                <div class="checklist-text">
+                    <strong>Set up your first budget</strong>
+                    <span>Allocate your income across spending categories</span>
+                </div>
+            </a>
+            <a href="{% url 'create_goal' %}" class="checklist-item {% if has_goal %}checklist-done{% endif %}">
+                <span class="checklist-icon">{% if has_goal %}&#10003;{% else %}&#9675;{% endif %}</span>
+                <div class="checklist-text">
+                    <strong>Create a savings goal</strong>
+                    <span>Set a target for retirement, emergencies, or purchases</span>
+                </div>
+            </a>
+            <a href="{% url 'savings_progress' %}" class="checklist-item {% if has_savings %}checklist-done{% endif %}">
+                <span class="checklist-icon">{% if has_savings %}&#10003;{% else %}&#9675;{% endif %}</span>
+                <div class="checklist-text">
+                    <strong>Log your first savings entry</strong>
+                    <span>Track what you've already saved</span>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-section">
+        <h3>This Month's Snapshot</h3>
+        <div class="snapshot-grid">
+            {% if snapshot_budget %}
+            <div class="snapshot-card">
+                <div class="snapshot-label">Budget Used</div>
+                <div class="snapshot-value">${{ snapshot_budget.spent|floatformat:0 }} <span class="snapshot-of">/ ${{ snapshot_budget.income|floatformat:0 }}</span></div>
+                <div class="progress-bar-container" style="margin: 8px 0 4px;">
+                    <div class="progress-bar {% if snapshot_budget.over %}progress-bar-danger{% endif %}" style="width: {{ snapshot_budget.percent }}%"></div>
+                </div>
+                <div class="snapshot-sub">{{ snapshot_budget.percent }}% of income spent</div>
+            </div>
+            {% else %}
+            <a href="{% url 'budget_setup' %}" class="snapshot-card snapshot-empty">
+                <div class="snapshot-label">Budget</div>
+                <div class="snapshot-empty-cta">Set up this month's budget &#8594;</div>
+            </a>
+            {% endif %}
+
+            <div class="snapshot-card">
+                <div class="snapshot-label">Total Saved</div>
+                <div class="snapshot-value">${{ total_savings|floatformat:2 }}</div>
+                <div class="snapshot-sub">all time</div>
+            </div>
+
+            {% if goals_count > 0 %}
+            <div class="snapshot-card">
+                <div class="snapshot-label">Goals Progress</div>
+                <div class="snapshot-value">{{ avg_goal_progress }}%</div>
+                <div class="progress-bar-container" style="margin: 8px 0 4px;">
+                    <div class="progress-bar" style="width: {{ avg_goal_progress }}%"></div>
+                </div>
+                <div class="snapshot-sub">avg across {{ goals_count }} goal{{ goals_count|pluralize }}</div>
+            </div>
+            {% else %}
+            <a href="{% url 'create_goal' %}" class="snapshot-card snapshot-empty">
+                <div class="snapshot-label">Goals</div>
+                <div class="snapshot-empty-cta">Create your first goal &#8594;</div>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
     {% if completion_percent < 100 %}
     <div class="dashboard-section">
         <h3>Profile Completion</h3>
