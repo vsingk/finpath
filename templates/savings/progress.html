@@ -293,7 +293,9 @@
     let projChart = null;
 
     function renderProjection(years) {
-        const ctx = document.getElementById('projectionChart').getContext('2d');
+        const canvas = document.getElementById('projectionChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
         const key = years + 'yr';
         const dataPoints = projection[key] || [];
         const labels = projection.labels.slice(0, dataPoints.length);
@@ -350,7 +352,7 @@
         });
     });
 
-    if (projection.labels && projection.labels.length > 0) {
+    if (historicalLabels.length > 0 && projection.labels && projection.labels.length > 0) {
         renderProjection(1);
     }
 </script>

@@ -166,7 +166,7 @@ def budget_overview(request):
     total_spent = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     remaining = total_income - total_spent
     unallocated = total_income - total_allocated
-    monthly_income = total_income / 12
+    monthly_income = total_income
     category_data = _build_category_data(categories)
     sankey_data = _build_sankey_data(budget, categories, total_income)
     recent_expenses = expenses[:20]

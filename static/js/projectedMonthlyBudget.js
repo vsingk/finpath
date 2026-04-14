@@ -58,7 +58,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function buildChart(canvasId, chartRef, labels, data) {
         if (chartRef) chartRef.destroy();
-        const ctx = document.getElementById(canvasId).getContext('2d');
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return null;
+        const ctx = canvas.getContext('2d');
         return new Chart(ctx, {
             type: 'line',
             data: {

@@ -15,6 +15,9 @@ class BudgetForm(forms.ModelForm):
     class Meta:
         model = Budget
         fields = ('month', 'total_income')
+        labels = {
+            'total_income': 'Monthly Income',
+        }
         widgets = {
             'total_income': forms.NumberInput(attrs={
                 'class': 'form-input',
