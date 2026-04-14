@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="dashboard-header">
+        <h2>Welcome back, {{ user.first_name|default:user.username }}!</h2>
+        <p>Here's your progress overview.</p>
+    </div>
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">&#128293;</div>
+            <div class="stat-value">{{ streak }}</div>
+            <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#9989;</div>
+            <div class="stat-value">{{ completion_percent }}%</div>
+            <div class="stat-label">Profile Complete</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">&#127942;</div>
+            <div class="stat-value">{{ achieved_count }} / {{ milestones|length }}</div>
+            <div class="stat-label">Milestones</div>
+        </div>
+    </div>
+
+    {% if completion_percent < 100 %}
+    <div class="dashboard-section">
+        <h3>Profile Completion</h3>
+        <div class="progress-bar-container">
+            <div class="progress-bar" style="width: {{ completion_percent }}%"></div>
+        </div>
+        <p class="progress-text">
+            {{ completion_percent }}% complete &mdash; <a href="{% url 'profile' %}">Complete your profile</a>
+        </p>
+    </div>
+    {% endif %}
+
+    <div class="dashboard-section">
+        <h3>Milestones</h3>
+        <div class="slider-panel">
+            <button class="milestone-nav" id="milestone-prev" aria-label="Previous">&#8249;</button>
+            <div class="milestone-slider" id="milestone-slider">
+                {% for milestone in milestones %}
+                <div class="milestone-card {% if milestone.achieved %}milestone-achieved{% else %}milestone-locked{% endif %}">
+                    <div class="milestone-icon">{{ milestone.icon }}</div>
+                    <div class="milestone-name">{{ milestone.name }}</div>
+                    <div class="milestone-desc">{{ milestone.description }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            <button class="milestone-nav" id="milestone-next" aria-label="Next">&#8250;</button>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h3>Your Tools</h3>
+        <div class="slider-panel">
+            <button class="milestone-nav" id="tools-prev" aria-label="Previous">&#8249;</button>
+            <div class="tool-slider" id="tool-slider">
+                {% for feature in placeholder_features %}
+                {% if feature.url %}
+                <a href="{% url feature.url %}" class="card card-link tool-slide-card">
+                    <div class="card-icon">{{ feature.icon }}</div>
+                    <h3>{{ feature.title }}</h3>
+                    <p>{{ feature.description }}</p>
+                    <span class="badge badge-active">{{ feature.status }}</span>
+                </a>
+                {% else %}
+                <div class="card tool-slide-card">
+                    <div class="card-icon">{{ feature.icon }}</div>
+                    <h3>{{ feature.title }}</h3>
+                    <p>{{ feature.description }}</p>
+                    <span class="badge badge-muted">{{ feature.status }}</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <button class="milestone-nav" id="tools-next" aria-label="Next">&#8250;</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    function initSlider(sliderId, prevId, nextId, cardSelector) {
+        var slider = document.getElementById(sliderId);
+        var prev   = document.getElementById(prevId);
+        var next   = document.getElementById(nextId);
+        if (!slider || !prev || !next) return;
+
+        function scrollAmount() {
+            var card = slider.querySelector(cardSelector);
+            return card ? card.offsetWidth + 16 : 220;
+        }
+        prev.addEventListener('click', function () {
+            slider.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
+        });
+        next.addEventListener('click', function () {
+            slider.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+        });
+    }
+
+    initSlider('milestone-slider', 'milestone-prev', 'milestone-next', '.milestone-card');
+    initSlider('tool-slider',      'tools-prev',     'tools-next',     '.tool-slide-card');
+})();
+</script>
+{% endblock %}
