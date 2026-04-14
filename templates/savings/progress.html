@@ -92,7 +92,7 @@
                     <input type="number" id="calc1-match-cap" class="form-input" placeholder="e.g. 500" min="0">
                 </div>
                 <div class="chart-card" id="chart-card-monthly" style="display: none; width: 100%; height: 100%; background-color: none; ">
-                    <canvas id="projectedChart" style="height: 100%; width: 100%;"></canvas>
+                    <canvas id="depositChart" style="height: 100%; width: 100%;"></canvas>
                 </div>
             </div>
 
@@ -358,7 +358,7 @@
     let projChart = null;
 
     function renderProjection(years) {
-        const canvas = document.getElementById('projectionChart');
+        const canvas = document.getElementById('depositChart');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const key = years + 'yr';
