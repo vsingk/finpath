@@ -64,10 +64,14 @@
                             </span>
                             {% endif %}
                         </div>
-                        <div style="font-size: 0.875rem; color: var(--text-light); display: flex; align-items: center; gap: 8px;">
+                        <div style="font-size: 0.875rem; color: var(--text-light); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span>${{ goal.current_amount|floatformat:2 }} / ${{ goal.target_amount|floatformat:2 }}</span>
                             <span>·</span>
                             <span>{{ goal.progress_percent }}% complete</span>
+                            {% if goal.remaining_amount > 0 %}
+                            <span>·</span>
+                            <span style="color: var(--primary); font-weight: 600;">${{ goal.remaining_amount|floatformat:2 }} to go</span>
+                            {% endif %}
                             {% if goal.is_retirement_account and goal.get_annual_limit %}
                             <span>·</span>
                             <span style="font-size: 0.85rem;">Limit: ${{ goal.get_annual_limit|floatformat:0 }}/year</span>
@@ -75,7 +79,12 @@
                         </div>
                     </div>
                     <div style="width: 150px;">
-                        <label for="id_goal_{{ goal.id }}" style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85rem;">Amount ($)</label>
+                        <label for="id_goal_{{ goal.id }}" style="display: block; margin-bottom: 4px; font-weight: 600; font-size: 0.85rem;">
+                            Amount ($)
+                            {% if goal.remaining_amount > 0 and goal.remaining_amount < remaining %}
+                            <span style="color: var(--text-light); font-weight: 400; font-size: 0.75rem;">(max: ${{ goal.remaining_amount|floatformat:2 }})</span>
+                            {% endif %}
+                        </label>
                         <input 
                             type="number" 
                             name="goal_{{ goal.id }}" 
@@ -84,7 +93,7 @@
                             class="form-input goal-input" 
                             step="0.01" 
                             min="0"
-                            max="{{ remaining }}"
+                            max="{% if goal.remaining_amount > 0 and goal.remaining_amount < remaining %}{{ goal.remaining_amount }}{% else %}{{ remaining }}{% endif %}"
                             placeholder="0.00"
                             {% if goal.id in already_allocated_goal_ids %}disabled title="Already allocated this month. Delete the existing allocation to change it."{% endif %}
                             style="width: 100%;">
