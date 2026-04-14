@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_new %}Create{% else %}Edit{% endif %} Budget - FinPath{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="budget-header">
+        <h2>{% if is_new %}Create Your Budget{% else %}Edit Budget{% endif %}</h2>
+        <p>Set your monthly income and allocate amounts to each spending category.</p>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="form-card budget-setup-card">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <h3>Budget Details</h3>
+                {% for field in budget_form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <small class="form-help">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                    <small class="form-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <h3 style="margin-top: 32px;">Categories</h3>
+                <p style="color: var(--text-light); margin-bottom: 16px; font-size: 0.9rem;">
+                    Set an amount for each category. Leave allocation at $0 for categories you don't need.
+                </p>
+
+                {{ formset.management_form }}
+
+                <div class="budget-categories-list">
+                    {% for cat_form in formset %}
+                    <div class="budget-category-form-row">
+                        {{ cat_form.id }}
+                        <div class="form-group budget-cat-name">
+                            {% if forloop.first %}
+                            <label>Category Name</label>
+                            {% endif %}
+                            {{ cat_form.name }}
+                            {% for error in cat_form.name.errors %}
+                            <small class="form-error">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group budget-cat-amount">
+                            {% if forloop.first %}
+                            <label>Allocated ($)</label>
+                            {% endif %}
+                            {{ cat_form.allocated }}
+                            {% for error in cat_form.allocated.errors %}
+                            <small class="form-error">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group budget-cat-delete">
+                            {% if forloop.first %}
+                            <label>&nbsp;</label>
+                            {% endif %}
+                            {% if cat_form.instance.pk %}
+                            <label class="budget-delete-label">
+                                {{ cat_form.DELETE }} Remove
+                            </label>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if formset.non_form_errors %}
+                {% for error in formset.non_form_errors %}
+                <small class="form-error">{{ error }}</small>
+                {% endfor %}
+                {% endif %}
+
+                <div style="margin-top: 24px;">
+                    <button type="submit" class="btn btn-primary">Save Budget</button>
+                    <a href="{% url 'budget_overview' %}" class="btn btn-outline" style="margin-left: 8px;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

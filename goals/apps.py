@@ -6,4 +6,4 @@ class GoalsConfig(AppConfig):
     name = 'goals'
     
     def ready(self):
-        import goals.signals  
+        import goals.signals
