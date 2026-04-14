@@ -10,7 +10,7 @@
 
     <div class="learn-filters" id="learn-filters">
         {% for cat in categories %}
-        <button class="filter-btn {% if forloop.first %}filter-btn-active{% endif %}" data-category="{{ cat }}">
+        <button class="filter-btn {% if cat == 'Budgeting' %}filter-btn-active{% endif %}" data-category="{{ cat }}">
             {{ cat }}
         </button>
         {% endfor %}
@@ -18,22 +18,17 @@
 
     <div class="article-grid" id="article-grid">
         {% for article in articles %}
-        <div class="article-card" data-category="{{ article.category }}">
+        <a class="article-card article-card--{{ article.category_color }}" data-category="{{ article.category }}" href="{% url 'article_detail' article.slug %}" {% if article.category != 'Budgeting' %}style="display:none;"{% endif %}>
             <div class="article-card-top">
-                <span class="article-icon">{{ article.icon }}</span>
                 <span class="article-category article-category-{{ article.category_color }}">{{ article.category }}</span>
+                <span class="article-read-time">{{ article.read_time }}</span>
             </div>
             <h3 class="article-title">{{ article.title }}</h3>
             <p class="article-summary">{{ article.summary }}</p>
-            <div class="article-footer">
-                <span class="article-read-time">&#128337; {{ article.read_time }} read</span>
-                <div class="article-tags">
-                    {% for tag in article.tags %}
-                    <span class="article-tag">#{{ tag }}</span>
-                    {% endfor %}
-                </div>
+            <div class="article-card-cta">
+                Read article <span class="article-cta-arrow">&#8594;</span>
             </div>
-        </div>
+        </a>
         {% endfor %}
     </div>
 

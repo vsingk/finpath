@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }} — FinPath{% endblock %}
+
+{% block content %}
+<div class="reading-progress-bar" id="readingProgress"></div>
+
+<div class="container">
+    <div class="article-detail-wrap">
+
+        <a href="{% url 'learn' %}" class="article-back">
+            <span class="article-back-arrow">&#8592;</span> Back to Learn
+        </a>
+
+        <header class="article-hero">
+            <span class="article-category article-category-{{ article.category_color }}">{{ article.category }}</span>
+            <h1 class="article-detail-title">{{ article.title }}</h1>
+            <div class="article-detail-meta">
+                <span class="article-meta-readtime">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {{ article.read_time }} read
+                </span>
+                <span class="article-meta-dot"></span>
+                <div class="article-tags">
+                    {% for tag in article.tags %}
+                    <span class="article-tag">#{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <p class="article-lede">{{ article.summary }}</p>
+        </header>
+
+        <div class="article-body" id="articleBody">
+            {{ article.body|safe }}
+        </div>
+
+        {% if article.references %}
+        <aside class="article-references">
+            <h3 class="article-references-heading">References &amp; Further Reading</h3>
+            <ul class="reference-list">
+                {% for ref in article.references %}
+                <li class="reference-item">
+                    <div class="reference-content">
+                        <a href="{{ ref.url }}" target="_blank" rel="noopener noreferrer" class="reference-title">{{ ref.title }}</a>
+                        <span class="reference-source">{{ ref.source }}</span>
+                    </div>
+                    <span class="reference-external">&#8599;</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </aside>
+        {% endif %}
+
+        <div class="article-detail-footer">
+            <div class="article-footer-text">
+                <strong>Enjoyed this article?</strong>
+                <span>Explore more personal finance guides in the Learn section.</span>
+            </div>
+            <a href="{% url 'learn' %}" class="btn btn-outline">&#8592; All articles</a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+(function () {
+    var bar = document.getElementById('readingProgress');
+    var body = document.getElementById('articleBody');
+    if (!bar || !body) return;
+    function update() {
+        var top = body.getBoundingClientRect().top + window.scrollY;
+        var h = body.offsetHeight;
+        var scrolled = window.scrollY - top + window.innerHeight * 0.35;
+        var pct = Math.min(Math.max(scrolled / h, 0), 1) * 100;
+        bar.style.width = pct + '%';
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+}());
+</script>
+{% endblock %}
